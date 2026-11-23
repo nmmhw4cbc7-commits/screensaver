@@ -41,7 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         w.titlebarAppearsTransparent = !chrome
         w.titleVisibility = chrome ? .visible : .hidden
         w.isReleasedWhenClosed = false
-        w.contentViewController = NSHostingController(rootView: v)
+        let host = NSHostingController(rootView: v)
+        w.contentViewController = host
+        w.setContentSize(host.view.fittingSize)
         w.center()
         win = w
         NSApp.activate(ignoringOtherApps: true)
