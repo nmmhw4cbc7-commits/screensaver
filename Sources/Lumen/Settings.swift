@@ -163,3 +163,17 @@ struct Inspector: View {
         selection = c.id
     }
 }
+
+// MARK: - About page
+struct AboutPage: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 128, height: 128)
+            Text("Lumen").font(.system(size: 34, weight: .bold))
+            Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–")").foregroundStyle(.secondary)
+            Text("Ein Bildschirmschoner, der wirklich schön ist.").font(.title3).padding(.top, 6)
+            Button("Einführung erneut zeigen") { AppDelegate.shared.showOnboarding() }.padding(.top, 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
