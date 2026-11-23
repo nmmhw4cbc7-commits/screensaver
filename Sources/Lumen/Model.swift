@@ -95,3 +95,25 @@ let presets: [Preset] = [
     Preset(name: "Kosmos", look: Look(bg: .stars, items: [WItem(.clock, .bold, 0.2, 0.82), WItem(.moon, .outline, 0.84, 0.16, tint: 4)])),
     Preset(name: "Lagerfeuer", look: Look(bg: .fireflies, items: [WItem(.clock, .color, 0.5, 0.45, scale: 0.9, tint: 1), WItem(.date, .minimal, 0.5, 0.67, tint: 1)])),
 ]
+
+// MARK: - Persistent settings store
+final class Store: ObservableObject {
+    static let shared = Store()
+    private let d = UserDefaults.standard
+
+    @Published var look: Look { didSet { d.set(try? JSONEncoder().encode(look), forKey: "look") } }
+    @Published var idleMinutes: Int { didSet { d.set(idleMinutes, forKey: "idle") } }
+    @Published var displaySleep: Int { didSet { d.set(displaySleep, forKey: "displaySleep") } }
+    @Published var skipVideo: Bool { didSet { d.set(skipVideo, forKey: "skipVideo") } }
+    @Published var photoFolder: String { didSet { d.set(photoFolder, forKey: "photos") } }
+    @Published var onboarded: Bool { didSet { d.set(onboarded, forKey: "onboarded2") } }
+
+    init() {
+        look = d.data(forKey: "look").flatMap { try? JSONDecoder().decode(Look.self, from: $0) } ?? presets[0].look
+        idleMinutes = d.object(forKey: "idle") as? Int ?? 5
+        displaySleep = d.object(forKey: "displaySleep") as? Int ?? 0
+        skipVideo = d.object(forKey: "skipVideo") as? Bool ?? true
+        photoFolder = d.string(forKey: "photos") ?? ""
+        onboarded = d.bool(forKey: "onboarded2")
+    }
+}
