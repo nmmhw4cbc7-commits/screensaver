@@ -116,4 +116,13 @@ final class Store: ObservableObject {
         photoFolder = d.string(forKey: "photos") ?? ""
         onboarded = d.bool(forKey: "onboarded2")
     }
+
+    // MARK: - Launch at login via SMAppService
+    var launchAtLogin: Bool {
+        get { SMAppService.mainApp.status == .enabled }
+        set {
+            try? newValue ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
+            objectWillChange.send()
+        }
+    }
 }
