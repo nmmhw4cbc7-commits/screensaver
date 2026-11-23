@@ -75,3 +75,23 @@ struct Look: Codable, Equatable {
     var dim = 0.0
     var items: [WItem]
 }
+
+// MARK: - Curated design presets
+struct Preset: Identifiable {
+    let name: String
+    let look: Look
+    var id: String { name }
+}
+
+let presets: [Preset] = [
+    Preset(name: "Nordlicht", look: Look(bg: .aurora, items: [WItem(.clock, .minimal, 0.5, 0.44, scale: 1.3), WItem(.date, .minimal, 0.5, 0.63)])),
+    Preset(name: "Studio", look: Look(bg: .mesh, items: [WItem(.analog, .glass, 0.27, 0.5, scale: 1.3), WItem(.weather, .glass, 0.72, 0.32), WItem(.calendar, .glass, 0.72, 0.66)])),
+    Preset(name: "Neon", look: Look(bg: .constellation, items: [WItem(.clock, .neon, 0.5, 0.42, scale: 1.4, tint: 5), WItem(.greeting, .neon, 0.5, 0.65, tint: 3)])),
+    Preset(name: "Zen", look: Look(bg: .waves, items: [WItem(.clock, .serif, 0.5, 0.34), WItem(.quote, .serif, 0.5, 0.6)])),
+    Preset(name: "Dashboard", look: Look(bg: .spectrum, dim: 0.35, items: [
+        WItem(.clock, .card, 0.2, 0.27, scale: 0.75, tint: 3), WItem(.weather, .card, 0.5, 0.27, scale: 1.2, tint: 6), WItem(.world, .card, 0.8, 0.27, scale: 1.2, tint: 2),
+        WItem(.system, .card, 0.2, 0.73, scale: 1.2, tint: 5), WItem(.progress, .card, 0.5, 0.73, scale: 1.2, tint: 4), WItem(.battery, .card, 0.8, 0.73, scale: 1.2, tint: 2)])),
+    Preset(name: "Terminal", look: Look(bg: .rain, items: [WItem(.clock, .mono, 0.5, 0.42, tint: 2), WItem(.countdown, .mono, 0.5, 0.64, tint: 2)])),
+    Preset(name: "Kosmos", look: Look(bg: .stars, items: [WItem(.clock, .bold, 0.2, 0.82), WItem(.moon, .outline, 0.84, 0.16, tint: 4)])),
+    Preset(name: "Lagerfeuer", look: Look(bg: .fireflies, items: [WItem(.clock, .color, 0.5, 0.45, scale: 0.9, tint: 1), WItem(.date, .minimal, 0.5, 0.67, tint: 1)])),
+]
