@@ -52,3 +52,16 @@ struct SaverCanvas: View {
             }, including: editing ? .all : .subviews)
     }
 }
+
+// MARK: - Live look thumbnail
+struct LookThumb: View {
+    let look: Look
+    var width: CGFloat = 240
+    var fps: Double = 15
+    var body: some View {
+        SaverCanvas(look: .constant(look), fps: fps)
+            .frame(width: width, height: width * 10 / 16)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .allowsHitTesting(false)
+    }
+}
