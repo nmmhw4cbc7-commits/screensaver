@@ -80,3 +80,51 @@ final class SaverWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 }
+
+// MARK: - Idle detection, video awareness and display sleep
+final class SaverController {
+    static let shared = SaverController()
+    private var windows: [NSWindow] = []
+    private var shownAt = Date.distantPast
+    private var timer: Timer?
+    private var monitor: Any?
+    private var prevApp: NSRunningApplication?
+    private var startMouse = NSPoint.zero
+    private var cursorHidden = false
+    private var slept = false
+
+    private var idle: Double {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+    }
+
+    /// true while e.g. a video or presentation keeps the display awake
+    private var displayBusy: Bool {
+        var d: Unmanaged<CFDictionary>?
+        guard IOPMCopyAssertionsStatus(&d) == kIOReturnSuccess,
+              let dict = d?.takeRetainedValue() as? [String: Int] else { return false }
+        return (dict["PreventUserIdleDisplaySleep"] ?? 0) > 0
+    }
+
+    func start() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
+    }
+
+    private func tick() {
+        let s = Store.shared
+        if windows.isEmpty {
+            guard s.idleMinutes > 0, idle >= Double(s.idleMinutes * 60) else { return }
+            if s.skipVideo && displayBusy { return }
+            show()
+            return
+        }
+        let running = Date().timeIntervalSince(shownAt)
+        if !NSApp.isActive, running > 2, idle < 0.5 { hide(); return }
+        if s.displaySleep > 0, !slept, running > Double(s.displaySleep * 60) {
+            slept = true
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+            p.arguments = ["displaysleepnow"]
+            try? p.run()
+        }
+    }
+}
