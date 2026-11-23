@@ -81,3 +81,21 @@ struct WConf: Codable, Identifiable, Hashable {
         .init(kind: .verse, enabled: true, style: .glass, pos: .bottomLeading),
     ]
 }
+
+// MARK: - Persistent settings store
+final class Store: ObservableObject {
+    static let shared = Store()
+    private let d = UserDefaults.standard
+
+    @Published var bg: BG { didSet { d.set(bg.rawValue, forKey: "bg") } }
+    @Published var widgets: [WConf] { didSet { d.set(try? JSONEncoder().encode(widgets), forKey: "widgets") } }
+    @Published var idleMinutes: Int { didSet { d.set(idleMinutes, forKey: "idle") } }
+    @Published var onboarded: Bool { didSet { d.set(onboarded, forKey: "onboarded") } }
+
+    init() {
+        bg = BG(rawValue: d.string(forKey: "bg") ?? "") ?? .aurora
+        widgets = d.data(forKey: "widgets").flatMap { try? JSONDecoder().decode([WConf].self, from: $0) } ?? WConf.defaults
+        idleMinutes = d.object(forKey: "idle") as? Int ?? 5
+        onboarded = d.bool(forKey: "onboarded")
+    }
+}
