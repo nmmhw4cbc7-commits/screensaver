@@ -47,3 +47,22 @@ let tints: [Color] = [
 
 let zones = ["Europe/Berlin", "Europe/London", "Europe/Moscow", "America/New_York", "America/Chicago", "America/Los_Angeles", "America/Sao_Paulo",
              "Asia/Dubai", "Asia/Kolkata", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland", "Africa/Johannesburg"]
+
+// MARK: - Freely placed widget instance
+struct WItem: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var kind: WKind
+    var style: WStyle
+    var tint: Int
+    var x: Double
+    var y: Double
+    var scale: Double
+    var param: String
+    var date: Date
+
+    init(_ kind: WKind, _ style: WStyle = .glass, _ x: Double = 0.5, _ y: Double = 0.5, scale: Double = 1, tint: Int = 0) {
+        self.kind = kind; self.style = style; self.tint = tint; self.x = x; self.y = y; self.scale = scale
+        param = kind.defaultParam
+        date = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
+    }
+}
