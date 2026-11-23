@@ -32,3 +32,18 @@ enum WKind: String, CaseIterable, Identifiable, Codable {
         }
     }
 }
+
+// MARK: - Widget styles, tint palette and time zones
+enum WStyle: String, CaseIterable, Identifiable, Codable {
+    case glass, minimal, bold, mono, neon, serif, outline, card, color
+    var id: String { rawValue }
+    var name: String { ["Glas", "Minimal", "Kräftig", "Mono", "Neon", "Serif", "Kontur", "Karte", "Farbe"][WStyle.allCases.firstIndex(of: self)!] }
+}
+
+let tints: [Color] = [
+    .white, Color(red: 1, green: 0.86, blue: 0.62), Color(red: 0.55, green: 1, blue: 0.8), Color(red: 0.55, green: 0.8, blue: 1),
+    Color(red: 0.78, green: 0.7, blue: 1), Color(red: 1, green: 0.6, blue: 0.76), Color(red: 1, green: 0.8, blue: 0.3), Color(red: 1, green: 0.5, blue: 0.4),
+]
+
+let zones = ["Europe/Berlin", "Europe/London", "Europe/Moscow", "America/New_York", "America/Chicago", "America/Los_Angeles", "America/Sao_Paulo",
+             "Asia/Dubai", "Asia/Kolkata", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland", "Africa/Johannesburg"]
