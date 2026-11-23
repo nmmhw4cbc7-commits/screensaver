@@ -15,3 +15,24 @@ enum BG: String, CaseIterable, Identifiable, Codable {
         }
     }
 }
+
+// MARK: - Widget kinds
+enum WKind: String, CaseIterable, Codable {
+    case clock, date, battery, verse
+    var name: String {
+        switch self {
+        case .clock: "Uhr"
+        case .date: "Datum"
+        case .battery: "Batterie"
+        case .verse: "Bibelvers"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .clock: "clock"
+        case .date: "calendar"
+        case .battery: "battery.75percent"
+        case .verse: "book.closed"
+        }
+    }
+}
