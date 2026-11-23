@@ -255,3 +255,93 @@ struct MonthView: View {
         }
     }
 }
+
+// MARK: - Widget view rendering all fourteen kinds
+struct WidgetView: View {
+    let item: WItem
+    private var kit: StyleKit { StyleKit(style: item.style, tint: tints[min(max(item.tint, 0), tints.count - 1)]) }
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { tl in
+            content(tl.date).modifier(Chrome(kit: kit)).animation(.smooth, value: tl.date)
+        }
+    }
+
+    private func time(_ d: Date, _ tz: TimeZone = .current) -> String {
+        var f = Date.FormatStyle(locale: Locale(identifier: "de_DE")).hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)
+        f.timeZone = tz
+        return d.formatted(f)
+    }
+
+    private func greeting(_ d: Date) -> String {
+        let h = Calendar.current.component(.hour, from: d)
+        let g = h < 5 ? "Gute Nacht" : h < 11 ? "Guten Morgen" : h < 17 ? "Guten Tag" : h < 22 ? "Guten Abend" : "Gute Nacht"
+        return item.param.isEmpty ? g : "\(g), \(item.param)"
+    }
+
+    private func progress(_ d: Date, _ c: Calendar.Component) -> Double {
+        guard let iv = Calendar.current.dateInterval(of: c, for: d) else { return 0 }
+        return d.timeIntervalSince(iv.start) / iv.duration
+    }
+
+    @ViewBuilder private func content(_ d: Date) -> some View {
+        switch item.kind {
+        case .clock:
+            Info(kit: kit, main: time(d), size: 120)
+        case .analog:
+            AnalogClock(date: d, kit: kit)
+        case .date:
+            Info(kit: kit, main: d.formatted(.dateTime.weekday(.wide)), sub: d.formatted(.dateTime.day().month(.wide).year()))
+        case .calendar:
+            MonthView(date: d, kit: kit)
+        case .weather:
+            if let w = Weather.shared.get(item.param) {
+                let desc = Weather.describe(w.code)
+                Info(kit: kit, sym: desc.0, main: "\(Int(w.temp.rounded()))°",
+                     sub: "\(item.param) · \(desc.1)\nH \(Int(w.hi.rounded()))°  T \(Int(w.lo.rounded()))°", size: 52)
+            } else {
+                Info(kit: kit, sym: "cloud.sun", main: "–°", sub: item.param, size: 52)
+            }
+        case .world:
+            let tz = TimeZone(identifier: item.param) ?? .current
+            let city = (tz.identifier.split(separator: "/").last.map(String.init) ?? "").replacingOccurrences(of: "_", with: " ")
+            Info(kit: kit, main: time(d, tz), sub: city, size: 56)
+        case .countdown:
+            let r = item.date.timeIntervalSince(d)
+            if r <= 0 {
+                Info(kit: kit, sym: "party.popper", main: "Jetzt!", sub: item.param, size: 52)
+            } else if r < 86400 {
+                let t = Int(r)
+                Info(kit: kit, main: String(format: "%02d:%02d:%02d", t / 3600, t / 60 % 60, t % 60), sub: "bis \(item.param)", size: 56)
+            } else {
+                let n = Int(r / 86400)
+                Info(kit: kit, main: n == 1 ? "1 Tag" : "\(n) Tage", sub: "bis \(item.param)", size: 56)
+            }
+        case .greeting:
+            Info(kit: kit, main: greeting(d), size: 48)
+        case .quote:
+            let q = Sys.quotes[Int(d.timeIntervalSince1970 / 600) % Sys.quotes.count]
+            Info(kit: kit, main: "„\(q.0)“", sub: "— \(q.1)", size: 28, width: 640)
+        case .text:
+            Info(kit: kit, main: item.param, size: 44, width: 760)
+        case .battery:
+            if let (p, ch) = Sys.battery() {
+                let sym = ch ? "battery.100percent.bolt" : ["battery.0percent", "battery.25percent", "battery.50percent", "battery.75percent", "battery.100percent"][min(4, (p + 12) / 25)]
+                Info(kit: kit, sym: sym, main: "\(p) %", sub: ch ? "Lädt" : "Batterie")
+            } else {
+                Info(kit: kit, sym: "powerplug", main: "Netz", sub: "Kein Akku")
+            }
+        case .system:
+            HStack(spacing: 24) { Ring(kit: kit, value: Sys.cpu(), label: "CPU"); Ring(kit: kit, value: Sys.mem(), label: "RAM") }
+        case .progress:
+            HStack(spacing: 24) {
+                Ring(kit: kit, value: progress(d, .day), label: "Tag")
+                Ring(kit: kit, value: progress(d, .weekOfYear), label: "Woche")
+                Ring(kit: kit, value: progress(d, .year), label: "Jahr")
+            }
+        case .moon:
+            let m = Sys.moon(d)
+            Info(kit: kit, sym: m.0, main: m.1, sub: "\(Int(m.2 * 100)) % beleuchtet", size: 34)
+        }
+    }
+}
