@@ -128,3 +128,17 @@ struct SaverView: View {
         .ignoresSafeArea()
     }
 }
+
+// MARK: - Scaled live preview
+struct SaverPreview: View {
+    var scale: CGFloat
+    var body: some View {
+        SaverView()
+            .frame(width: 1440, height: 900)
+            .scaleEffect(scale, anchor: .topLeading)
+            .frame(width: 1440 * scale, height: 900 * scale, alignment: .topLeading)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: .black.opacity(0.25), radius: 14, y: 6)
+            .allowsHitTesting(false)
+    }
+}
