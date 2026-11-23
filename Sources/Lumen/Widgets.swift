@@ -27,3 +27,57 @@ private func battery() -> (Int, Bool)? {
     }
     return nil
 }
+
+// MARK: - Widget view with live data and styles
+struct WidgetView: View {
+    let conf: WConf
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { tl in content(tl.date) }
+    }
+
+    private func data(_ d: Date) -> (String?, String, String?) {
+        switch conf.kind {
+        case .clock:
+            return (nil, d.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute()), nil)
+        case .date:
+            return (nil, d.formatted(.dateTime.weekday(.wide)), d.formatted(.dateTime.day().month(.wide).year()))
+        case .battery:
+            guard let (p, ch) = battery() else { return ("powerplug", "Netzbetrieb", nil) }
+            let sym = ch ? "battery.100percent.bolt" : ["battery.0percent", "battery.25percent", "battery.50percent", "battery.75percent", "battery.100percent"][min(4, (p + 12) / 25)]
+            return (sym, "\(p) %", ch ? "Lädt" : nil)
+        case .verse:
+            let v = verses[Int(d.timeIntervalSince1970 / 300) % verses.count]
+            return (nil, "„\(v.0)“", v.1)
+        }
+    }
+
+    private func font(_ size: CGFloat, _ secondary: Bool = false) -> Font {
+        switch conf.style {
+        case .glass: .system(size: size, weight: secondary ? .medium : .semibold, design: .rounded)
+        case .minimal: .system(size: size, weight: secondary ? .light : .thin)
+        case .bold: .system(size: size * 1.08, weight: secondary ? .bold : .black)
+        case .mono: .system(size: size * 0.82, weight: secondary ? .regular : .medium, design: .monospaced)
+        }
+    }
+
+    @ViewBuilder private func content(_ d: Date) -> some View {
+        let (sym, main, sub) = data(d)
+        let size: CGFloat = conf.kind == .clock ? 132 : conf.kind == .verse ? 26 : 40
+        let align: HorizontalAlignment = conf.pos.hAlign
+        VStack(alignment: align, spacing: conf.kind == .clock ? 0 : 6) {
+            HStack(spacing: 12) {
+                if let sym { Image(systemName: sym).font(.system(size: size * 0.7)) }
+                Text(main).font(font(size)).monospacedDigit().contentTransition(.numericText())
+            }
+            if let sub { Text(sub).font(font(size * 0.55, true)).opacity(0.75) }
+        }
+        .multilineTextAlignment(align == .leading ? .leading : align == .trailing ? .trailing : .center)
+        .frame(maxWidth: conf.kind == .verse ? 560 : nil)
+        .fixedSize(horizontal: false, vertical: true)
+        .foregroundStyle(.white)
+        .textCase(conf.style == .mono ? .uppercase : nil)
+        .modifier(StyleMod(style: conf.style))
+        .animation(.smooth, value: main)
+    }
+}
