@@ -73,3 +73,27 @@ private struct Mesh: View {
         })
     }
 }
+
+// MARK: - Starfield warp background
+private struct Stars: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .radialGradient(
+                Gradient(colors: [Color(red: 0.08, green: 0.05, blue: 0.2), .black]),
+                center: CGPoint(x: s.width / 2, y: s.height / 2), startRadius: 0, endRadius: max(s.width, s.height) * 0.7))
+            let cx = s.width / 2, cy = s.height / 2
+            for i in 0..<500 {
+                let f = Double(i)
+                let depth = fract(hash(f + 7) - t * 0.06)
+                let scale = 1 / (depth * 2.5 + 0.12)
+                let x = cx + (hash(f) * 2 - 1) * cx * 0.45 * scale
+                let y = cy + (hash(f + 3) * 2 - 1) * cy * 0.45 * scale
+                guard x > -5, x < s.width + 5, y > -5, y < s.height + 5 else { continue }
+                let r = (1 - depth) * 2.6 + 0.4
+                c.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
+                       with: .color(.white.opacity(min(1, (1 - depth) * 1.4))))
+            }
+        }
+    }
+}
