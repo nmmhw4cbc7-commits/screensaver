@@ -206,3 +206,26 @@ struct BehaviorPage: View {
         }
     }
 }
+
+// MARK: - Completion page
+struct DonePage: View {
+    var edit: () -> Void
+    @State private var appear = false
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 84)).foregroundStyle(.green)
+                .symbolEffect(.bounce, value: appear)
+                .scaleEffect(appear ? 1 : 0.5).opacity(appear ? 1 : 0)
+            PageHeader(title: "Alles bereit.", subtitle: "Lumen wartet ab jetzt in der Menüleiste (✦).")
+            HStack(spacing: 12) {
+                Button { SaverController.shared.show() } label: { Label("Vorschau", systemImage: "play.fill") }
+                Button { edit() } label: { Label("Widgets anpassen", systemImage: "slider.horizontal.3") }
+            }
+            .controlSize(.large)
+            Spacer()
+        }
+        .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.4).delay(0.15)) { appear = true } }
+    }
+}
