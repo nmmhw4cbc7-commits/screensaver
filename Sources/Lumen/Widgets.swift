@@ -81,3 +81,24 @@ struct WidgetView: View {
         .animation(.smooth, value: main)
     }
 }
+
+// MARK: - Glass, minimal, bold and mono style modifiers
+private struct StyleMod: ViewModifier {
+    let style: WStyle
+    func body(content: Content) -> some View {
+        switch style {
+        case .glass:
+            content.padding(.horizontal, 28).padding(.vertical, 20)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.18)))
+                .environment(\.colorScheme, .dark)
+        case .minimal:
+            content.shadow(color: .black.opacity(0.25), radius: 12)
+        case .bold:
+            content.shadow(color: .black.opacity(0.5), radius: 24, y: 6)
+        case .mono:
+            content.tracking(2).padding(.horizontal, 22).padding(.vertical, 16)
+                .overlay(Rectangle().strokeBorder(.white.opacity(0.55), lineWidth: 1))
+        }
+    }
+}
