@@ -88,3 +88,32 @@ struct WelcomePage: View {
         }
     }
 }
+
+// MARK: - Background picker page
+struct BackgroundPage: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Wähle deinen Hintergrund", subtitle: "Alle Szenen bewegen sich sanft und endlos.")
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(230), spacing: 22), count: 3), spacing: 22) {
+                ForEach(BG.allCases) { bg in
+                    let sel = s.bg == bg
+                    VStack(spacing: 10) {
+                        BackgroundView(bg: bg)
+                            .frame(width: 230, height: 140)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Color.accentColor, lineWidth: sel ? 3 : 0))
+                            .shadow(color: .black.opacity(sel ? 0.3 : 0.12), radius: sel ? 12 : 6, y: 4)
+                            .scaleEffect(sel ? 1.03 : 1)
+                        Label(bg.name, systemImage: sel ? "checkmark.circle.fill" : "circle")
+                            .font(.headline).foregroundStyle(sel ? Color.accentColor : .primary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation(.spring(duration: 0.35)) { s.bg = bg } }
+                }
+            }
+            Spacer()
+        }
+    }
+}
