@@ -124,3 +124,29 @@ private struct Waves: View {
         }
     }
 }
+
+// MARK: - Bokeh lights background
+private struct Bokeh: View {
+    let t: Double
+    var body: some View {
+        GeometryReader { g in
+            let s = g.size, m = min(s.width, s.height)
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.12, green: 0.04, blue: 0.1), Color(red: 0.02, green: 0.01, blue: 0.05)],
+                               startPoint: .top, endPoint: .bottom)
+                ForEach(0..<34, id: \.self) { i in
+                    let f = Double(i)
+                    let d = m * (0.04 + 0.16 * hash(f + 1))
+                    let y = fract(hash(f + 2) + t * (0.008 + 0.02 * hash(f + 5)))
+                    Circle()
+                        .fill(Color(hue: 0.02 + 0.13 * hash(f + 4), saturation: 0.7, brightness: 1).opacity(0.35 + 0.3 * hash(f + 6)))
+                        .frame(width: d, height: d)
+                        .blur(radius: d * (0.05 + 0.25 * hash(f + 8)))
+                        .position(x: s.width * hash(f + 3) + 40 * sin(t * 0.2 + f),
+                                  y: (s.height + d * 2) * (1 - y) - d)
+                        .blendMode(.screen)
+                }
+            }
+        }
+    }
+}
