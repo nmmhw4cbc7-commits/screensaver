@@ -106,3 +106,54 @@ private struct Spectrum: View {
         }
     }
 }
+
+// MARK: - Starfield and constellation network
+private struct Stars: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .radialGradient(
+                Gradient(colors: [Color(red: 0.08, green: 0.05, blue: 0.2), .black]),
+                center: CGPoint(x: s.width / 2, y: s.height / 2), startRadius: 0, endRadius: max(s.width, s.height) * 0.7))
+            let cx = s.width / 2, cy = s.height / 2
+            for i in 0..<500 {
+                let f = Double(i)
+                let depth = fract(hash(f + 7) - t * 0.06)
+                let scale = 1 / (depth * 2.5 + 0.12)
+                let x = cx + (hash(f) * 2 - 1) * cx * 0.45 * scale
+                let y = cy + (hash(f + 3) * 2 - 1) * cy * 0.45 * scale
+                guard x > -5, x < s.width + 5, y > -5, y < s.height + 5 else { continue }
+                let r = (1 - depth) * 2.6 + 0.4
+                c.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
+                       with: .color(.white.opacity(min(1, (1 - depth) * 1.4))))
+            }
+        }
+    }
+}
+
+private struct Constellation: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .linearGradient(
+                Gradient(colors: [Color(red: 0.03, green: 0.03, blue: 0.12), Color(red: 0.08, green: 0.02, blue: 0.16)]),
+                startPoint: .zero, endPoint: CGPoint(x: s.width, y: s.height)))
+            let pts: [CGPoint] = (0..<90).map { i in
+                let f = Double(i)
+                let x = fract(hash(f) + t * 0.006 * (hash(f + 1) * 2 - 1))
+                let y = fract(hash(f + 2) + t * 0.006 * (hash(f + 3) * 2 - 1))
+                return CGPoint(x: x * s.width, y: y * s.height)
+            }
+            let maxD = min(s.width, s.height) * 0.17
+            for i in 0..<pts.count {
+                for j in (i + 1)..<pts.count {
+                    let d = hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)
+                    guard d < maxD else { continue }
+                    var p = Path(); p.move(to: pts[i]); p.addLine(to: pts[j])
+                    c.stroke(p, with: .color(Color(red: 0.5, green: 0.8, blue: 1).opacity(Double(1 - d / maxD) * 0.45)), lineWidth: 1)
+                }
+                c.fill(Path(ellipseIn: CGRect(x: pts[i].x - 2.5, y: pts[i].y - 2.5, width: 5, height: 5)), with: .color(.white.opacity(0.85)))
+            }
+        }
+    }
+}
