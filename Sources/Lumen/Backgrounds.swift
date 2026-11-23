@@ -56,3 +56,20 @@ private struct Aurora: View {
             .blendMode(.screen)
     }
 }
+
+// MARK: - Flowing mesh gradient background
+private struct Mesh: View {
+    let t: Double
+    var body: some View {
+        let p = { (a: Double, b: Double) -> SIMD2<Float> in [Float(a), Float(b)] }
+        MeshGradient(width: 3, height: 3, points: [
+            p(0, 0), p(0.5 + 0.2 * sin(t * 0.21), 0), p(1, 0),
+            p(0, 0.5 + 0.2 * cos(t * 0.17)), p(0.5 + 0.25 * sin(t * 0.3), 0.5 + 0.25 * cos(t * 0.23)), p(1, 0.5 + 0.2 * sin(t * 0.19)),
+            p(0, 1), p(0.5 + 0.2 * cos(t * 0.25), 1), p(1, 1),
+        ], colors: (0..<9).map { i in
+            let f = Double(i)
+            return Color(hue: fract(0.55 + f * 0.045 + t * 0.008 + 0.05 * sin(t * 0.1 + f)),
+                         saturation: 0.75, brightness: 0.45 + 0.35 * hash(f))
+        })
+    }
+}
