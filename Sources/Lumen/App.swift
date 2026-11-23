@@ -83,4 +83,33 @@ final class SaverController {
             hide()
         }
     }
+
+    // MARK: - Multi-display saver windows with fade transitions
+    func show() {
+        guard windows.isEmpty else { return }
+        shownAt = Date()
+        for screen in NSScreen.screens {
+            let w = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+            w.level = .screenSaver
+            w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+            w.isReleasedWhenClosed = false
+            w.backgroundColor = .black
+            w.contentView = NSHostingView(rootView: SaverView())
+            w.setFrame(screen.frame, display: true)
+            w.alphaValue = 0
+            w.orderFrontRegardless()
+            windows.append(w)
+        }
+        NSCursor.hide()
+        NSAnimationContext.runAnimationGroup { $0.duration = 1.2; windows.forEach { $0.animator().alphaValue = 1 } }
+    }
+
+    func hide() {
+        let ws = windows
+        windows = []
+        NSCursor.unhide()
+        NSAnimationContext.runAnimationGroup({ $0.duration = 0.35; ws.forEach { $0.animator().alphaValue = 0 } }) {
+            ws.forEach { $0.contentView = nil; $0.close() }
+        }
+    }
 }
