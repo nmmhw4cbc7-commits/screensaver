@@ -59,3 +59,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         present(SettingsView(), title: "Lumen Einstellungen", chrome: true)
     }
 }
+
+// MARK: - Idle detection and saver activation
+final class SaverController {
+    static let shared = SaverController()
+    private var windows: [NSWindow] = []
+    private var shownAt = Date.distantPast
+    private var timer: Timer?
+
+    private var idle: Double {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+    }
+
+    func start() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
+    }
+
+    private func tick() {
+        let mins = Store.shared.idleMinutes
+        if windows.isEmpty {
+            if mins > 0, idle >= Double(mins * 60) { show() }
+        } else if Date().timeIntervalSince(shownAt) > 2, idle < 0.6 {
+            hide()
+        }
+    }
+}
