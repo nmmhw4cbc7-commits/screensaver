@@ -229,3 +229,16 @@ struct DonePage: View {
         .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.4).delay(0.15)) { appear = true } }
     }
 }
+
+// MARK: - Settings window tabs
+struct SettingsView: View {
+    var body: some View {
+        TabView {
+            BackgroundPage().tabItem { Label("Hintergrund", systemImage: "photo.on.rectangle") }
+            WidgetsPage().tabItem { Label("Widgets", systemImage: "square.grid.3x3.square") }
+            DurationPage().tabItem { Label("Dauer", systemImage: "timer") }
+        }
+        .padding(.top, 8)
+        .frame(width: 860, height: 600)
+    }
+}
