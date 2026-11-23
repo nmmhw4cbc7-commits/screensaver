@@ -127,4 +127,52 @@ final class SaverController {
             try? p.run()
         }
     }
+
+    // MARK: - Show and dismiss with event capture
+    func show() {
+        guard windows.isEmpty else { return }
+        shownAt = Date()
+        slept = false
+        prevApp = NSWorkspace.shared.frontmostApplication
+        NSApp.activate(ignoringOtherApps: true)
+        for screen in NSScreen.screens {
+            let w = SaverWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+            w.level = .screenSaver
+            w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+            w.isReleasedWhenClosed = false
+            w.backgroundColor = .black
+            w.acceptsMouseMovedEvents = true
+            w.contentView = NSHostingView(rootView: SaverCanvas(look: .constant(Store.shared.look)))
+            w.setFrame(screen.frame, display: true)
+            w.alphaValue = 0
+            windows.append(w)
+        }
+        windows.first?.makeKeyAndOrderFront(nil)
+        windows.dropFirst().forEach { $0.orderFrontRegardless() }
+        if !cursorHidden { NSCursor.hide(); cursorHidden = true }
+        startMouse = NSEvent.mouseLocation
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel, .mouseMoved]) { [weak self] e in
+            guard let self else { return e }
+            if e.type == .mouseMoved {
+                let p = NSEvent.mouseLocation
+                if hypot(p.x - self.startMouse.x, p.y - self.startMouse.y) < 14 { return nil }
+            }
+            if Date().timeIntervalSince(self.shownAt) > 0.8 { self.hide() }
+            return nil
+        }
+        NSAnimationContext.runAnimationGroup { $0.duration = 1.2; windows.forEach { $0.animator().alphaValue = 1 } }
+    }
+
+    func hide() {
+        guard !windows.isEmpty else { return }
+        let ws = windows
+        windows = []
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        if cursorHidden { NSCursor.unhide(); cursorHidden = false }
+        NSAnimationContext.runAnimationGroup({ $0.duration = 0.35; ws.forEach { $0.animator().alphaValue = 0 } }) {
+            ws.forEach { $0.contentView = nil; $0.close() }
+        }
+        prevApp?.activate()
+    }
 }
