@@ -158,3 +158,100 @@ struct Chrome: ViewModifier {
         }
     }
 }
+
+// MARK: - Building blocks: info text, ring, analog face, month grid
+struct Info: View {
+    let kit: StyleKit
+    var sym: String? = nil
+    let main: String
+    var sub: String? = nil
+    var size: CGFloat = 40
+    var width: CGFloat? = nil
+
+    var body: some View {
+        VStack(spacing: size > 90 ? 0 : 6) {
+            HStack(spacing: 12) {
+                if let sym { Image(systemName: sym).symbolRenderingMode(.hierarchical).font(.system(size: size * 0.75)) }
+                Text(main).font(kit.font(size)).monospacedDigit().contentTransition(.numericText())
+            }
+            if let sub, !sub.isEmpty { Text(sub).font(kit.font(max(15, size * 0.42), true)).opacity(0.75) }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: width)
+        .fixedSize(horizontal: width == nil, vertical: true)
+    }
+}
+
+struct Ring: View {
+    let kit: StyleKit
+    let value: Double
+    let label: String
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle().stroke(kit.fg.opacity(0.2), lineWidth: 8)
+                Circle().trim(from: 0, to: value).stroke(kit.fg, style: StrokeStyle(lineWidth: 8, lineCap: .round)).rotationEffect(.degrees(-90))
+                Text("\(Int(value * 100))").font(kit.font(22)).monospacedDigit()
+            }
+            .frame(width: 78, height: 78)
+            Text(label).font(kit.font(15, true)).opacity(0.75)
+        }
+    }
+}
+
+struct AnalogClock: View {
+    let date: Date
+    let kit: StyleKit
+    var body: some View {
+        let c = Calendar.current.dateComponents([.hour, .minute, .second], from: date)
+        let s = Double(c.second ?? 0)
+        let m = Double(c.minute ?? 0) + s / 60
+        let h = Double(c.hour ?? 0).truncatingRemainder(dividingBy: 12) + m / 60
+        ZStack {
+            Circle().strokeBorder(kit.fg.opacity(0.35), lineWidth: 2)
+            ForEach(0..<12, id: \.self) { i in
+                Capsule().fill(kit.fg.opacity(i % 3 == 0 ? 0.9 : 0.45))
+                    .frame(width: i % 3 == 0 ? 4 : 2, height: i % 3 == 0 ? 16 : 10)
+                    .offset(y: -88)
+                    .rotationEffect(.degrees(Double(i) * 30))
+            }
+            hand(h / 12, 52, 6, kit.fg)
+            hand(m / 60, 76, 4, kit.fg)
+            hand(s / 60, 84, 2, .orange)
+            Circle().fill(.orange).frame(width: 10, height: 10)
+        }
+        .frame(width: 210, height: 210)
+    }
+
+    private func hand(_ v: Double, _ len: CGFloat, _ w: CGFloat, _ col: Color) -> some View {
+        Capsule().fill(col).frame(width: w, height: len).offset(y: -len / 2).rotationEffect(.degrees(v * 360))
+    }
+}
+
+struct MonthView: View {
+    let date: Date
+    let kit: StyleKit
+    var body: some View {
+        let cal = Calendar.current
+        let start = cal.date(from: cal.dateComponents([.year, .month], from: date))!
+        let days = cal.range(of: .day, in: .month, for: date)!.count
+        let lead = (cal.component(.weekday, from: start) - cal.firstWeekday + 7) % 7
+        let today = cal.component(.day, from: date)
+        let sy = cal.veryShortStandaloneWeekdaySymbols
+        let wd = Array(sy[(cal.firstWeekday - 1)...] + sy[..<(cal.firstWeekday - 1)])
+        VStack(spacing: 10) {
+            Text(date.formatted(.dateTime.month(.wide).year())).font(kit.font(22))
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 4), count: 7), spacing: 6) {
+                ForEach(0..<7, id: \.self) { Text(wd[$0]).font(kit.font(13, true)).opacity(0.5) }
+                ForEach(7..<(7 + lead + days), id: \.self) { i in
+                    let n = i - 7 - lead + 1
+                    Text(n > 0 ? "\(n)" : "")
+                        .font(kit.font(15, n != today))
+                        .frame(width: 28, height: 26)
+                        .background(n == today ? kit.fg.opacity(0.25) : .clear, in: Circle())
+                }
+            }
+            .frame(width: 236)
+        }
+    }
+}
