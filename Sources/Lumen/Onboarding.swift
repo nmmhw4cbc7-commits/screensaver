@@ -117,3 +117,26 @@ struct BackgroundPage: View {
         }
     }
 }
+
+// MARK: - Position picker control
+struct PositionPicker: View {
+    @Binding var pos: Pos
+    var body: some View {
+        Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+            ForEach(0..<3) { r in
+                GridRow {
+                    ForEach(0..<3) { c in
+                        let p = Pos.allCases[r * 3 + c]
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(p == pos ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .frame(width: 14, height: 9)
+                            .onTapGesture { withAnimation(.smooth) { pos = p } }
+                    }
+                }
+            }
+        }
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 6).strokeBorder(.secondary.opacity(0.35)))
+        .help("Position auf dem Bildschirm")
+    }
+}
