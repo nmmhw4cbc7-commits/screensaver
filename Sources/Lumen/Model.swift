@@ -36,3 +36,16 @@ enum WKind: String, CaseIterable, Codable {
         }
     }
 }
+
+// MARK: - Widget styles
+enum WStyle: String, CaseIterable, Codable {
+    case glass, minimal, bold, mono
+    var name: String {
+        switch self {
+        case .glass: "Glas"
+        case .minimal: "Minimal"
+        case .bold: "Kräftig"
+        case .mono: "Mono"
+        }
+    }
+}
