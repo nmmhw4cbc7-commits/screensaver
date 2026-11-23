@@ -74,3 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         present(SettingsView(sel: section), title: "Lumen", settings: true)
     }
 }
+
+// MARK: - Key-capable full-screen window
+final class SaverWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
