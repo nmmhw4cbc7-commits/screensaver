@@ -60,3 +60,31 @@ struct OnboardingView: View {
 
     private func go(_ d: Int) { withAnimation(.spring(duration: 0.5, bounce: 0.15)) { step += d } }
 }
+
+// MARK: - Welcome page
+struct WelcomePage: View {
+    private let features: [(String, String, String)] = [
+        ("sparkles", "Lebendige Hintergründe", "Fünf animierte Szenen, flüssig und energiesparend gerendert."),
+        ("square.grid.3x3.square", "Widgets nach Wunsch", "Uhr, Datum, Batterie und Bibelvers – in vier Stilen, frei platzierbar."),
+        ("moon.zzz", "Startet von selbst", "Nach der gewählten Dauer ohne Aktivität. Eine Bewegung beendet ihn."),
+    ]
+    var body: some View {
+        VStack(spacing: 0) {
+            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 120, height: 120).padding(.top, 36)
+            PageHeader(title: "Willkommen bei Lumen", subtitle: "Ein Bildschirmschoner, der wirklich schön ist.").padding(.top, -24)
+            VStack(alignment: .leading, spacing: 22) {
+                ForEach(features, id: \.0) { f in
+                    HStack(spacing: 18) {
+                        Image(systemName: f.0).font(.system(size: 28)).foregroundStyle(.tint).frame(width: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(f.1).font(.headline)
+                            Text(f.2).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: 460)
+            Spacer()
+        }
+    }
+}
