@@ -103,3 +103,23 @@ enum Sys {
         ("Wer aufhört, besser zu werden, hat aufgehört, gut zu sein.", "Philip Rosenthal"),
     ]
 }
+
+// MARK: - Style kit: fonts and colors per style
+struct StyleKit {
+    let style: WStyle
+    let tint: Color
+    var fg: Color { style == .color ? Color.black.opacity(0.82) : tint }
+
+    func font(_ size: CGFloat, _ secondary: Bool = false) -> Font {
+        switch style {
+        case .glass, .card: return .system(size: size, weight: secondary ? .medium : .semibold, design: .rounded)
+        case .minimal: return .system(size: size, weight: secondary ? .light : .thin)
+        case .bold: return .system(size: size * 1.08, weight: secondary ? .bold : .black)
+        case .mono: return .system(size: size * 0.82, weight: secondary ? .regular : .medium, design: .monospaced)
+        case .neon: return .system(size: size, weight: secondary ? .medium : .bold, design: .rounded)
+        case .serif: return .system(size: size, weight: secondary ? .regular : .medium, design: .serif)
+        case .outline: return .system(size: size, weight: secondary ? .regular : .light, design: .rounded)
+        case .color: return .system(size: size, weight: secondary ? .semibold : .heavy, design: .rounded)
+        }
+    }
+}
