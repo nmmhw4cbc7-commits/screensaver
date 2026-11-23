@@ -113,3 +113,57 @@ struct LooksPage: View {
         }
     }
 }
+
+// MARK: - Background picker with tuning sliders
+struct BackgroundPage: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Hintergrund", subtitle: "Alle Szenen bewegen sich sanft und endlos.")
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(160), spacing: 16), count: 4), spacing: 14) {
+                ForEach(BG.allCases) { bg in
+                    let sel = s.look.bg == bg
+                    VStack(spacing: 6) {
+                        BackgroundView(bg: bg, fps: 15)
+                            .frame(width: 160, height: 92)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.accentColor, lineWidth: sel ? 3 : 0))
+                        Text(bg.name).font(.callout.weight(.medium)).foregroundStyle(sel ? Color.accentColor : .primary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation(.smooth) { s.look.bg = bg } }
+                }
+            }
+            HStack(spacing: 28) {
+                slider("Tempo", "tortoise", $s.look.speed, 0.2...3)
+                slider("Farbton", "paintpalette", $s.look.hue, 0...1)
+                slider("Abdunkeln", "moon", $s.look.dim, 0...0.8)
+            }
+            .padding(.horizontal, 60).padding(.top, 22)
+            if s.look.bg == .photos {
+                HStack {
+                    Text(s.photoFolder.isEmpty ? "Kein Ordner gewählt" : (s.photoFolder as NSString).abbreviatingWithTildeInPath)
+                        .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    Button("Fotoordner wählen …") { pickFolder() }
+                }
+                .padding(.top, 12)
+            }
+            Spacer()
+        }
+    }
+
+    private func slider(_ title: String, _ sym: String, _ v: Binding<Double>, _ r: ClosedRange<Double>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(title, systemImage: sym).font(.callout).foregroundStyle(.secondary)
+            Slider(value: v, in: r)
+        }
+    }
+
+    private func pickFolder() {
+        let p = NSOpenPanel()
+        p.canChooseDirectories = true
+        p.canChooseFiles = false
+        p.prompt = "Auswählen"
+        if p.runModal() == .OK, let u = p.url { s.photoFolder = u.path }
+    }
+}
