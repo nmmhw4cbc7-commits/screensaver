@@ -157,3 +157,50 @@ private struct Constellation: View {
         }
     }
 }
+
+// MARK: - Ocean waves and rain
+private struct Waves: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .linearGradient(
+                Gradient(colors: [Color(red: 0.02, green: 0.05, blue: 0.15), Color(red: 0.0, green: 0.2, blue: 0.3)]),
+                startPoint: .zero, endPoint: CGPoint(x: 0, y: s.height)))
+            for i in 0..<7 {
+                let f = Double(i)
+                let base = s.height * (0.4 + f * 0.085)
+                var p = Path()
+                p.move(to: CGPoint(x: 0, y: s.height))
+                for x in stride(from: 0.0, through: s.width + 8, by: 8) {
+                    let u = x / s.width
+                    let y = base + sin(u * .pi * 2 * (1 + f * 0.3) + t * (0.25 + f * 0.07) + f) * s.height * 0.05
+                        + sin(u * 9 - t * 0.6 + f * 2) * s.height * 0.012
+                    p.addLine(to: CGPoint(x: x, y: y))
+                }
+                p.addLine(to: CGPoint(x: s.width, y: s.height))
+                p.closeSubpath()
+                c.fill(p, with: .color(Color(hue: 0.52 + f * 0.025, saturation: 0.75, brightness: 0.45 + f * 0.07).opacity(0.38)))
+            }
+        }
+    }
+}
+
+private struct Rain: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .linearGradient(
+                Gradient(colors: [Color(red: 0.02, green: 0.04, blue: 0.08), Color(red: 0.05, green: 0.12, blue: 0.16)]),
+                startPoint: .zero, endPoint: CGPoint(x: 0, y: s.height)))
+            for i in 0..<320 {
+                let f = Double(i)
+                let v = 0.5 + hash(f + 1)
+                let len = (18 + 40 * v) * s.height / 900
+                let y = fract(hash(f + 2) + t * 0.35 * v) * (s.height + len * 2) - len
+                let x = s.width * hash(f)
+                var p = Path(); p.move(to: CGPoint(x: x, y: y)); p.addLine(to: CGPoint(x: x - len * 0.12, y: y + len))
+                c.stroke(p, with: .color(Color(red: 0.6, green: 0.85, blue: 1).opacity(0.1 + 0.25 * (v - 0.5))), lineWidth: v)
+            }
+        }
+    }
+}
