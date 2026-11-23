@@ -98,4 +98,13 @@ final class Store: ObservableObject {
         idleMinutes = d.object(forKey: "idle") as? Int ?? 5
         onboarded = d.bool(forKey: "onboarded")
     }
+
+    // MARK: - Launch at login via SMAppService
+    var launchAtLogin: Bool {
+        get { SMAppService.mainApp.status == .enabled }
+        set {
+            try? newValue ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
+            objectWillChange.send()
+        }
+    }
 }
