@@ -140,3 +140,42 @@ struct PositionPicker: View {
         .help("Position auf dem Bildschirm")
     }
 }
+
+// MARK: - Widgets page with live preview
+struct WidgetsPage: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Widgets platzieren", subtitle: "Wähle Inhalte, Stil und Position – die Vorschau zeigt es live.")
+            HStack(alignment: .top, spacing: 26) {
+                VStack(spacing: 10) {
+                    ForEach(s.widgets.indices, id: \.self) { i in
+                        let w = s.widgets[i]
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: w.kind.symbol).frame(width: 22).foregroundStyle(.tint)
+                                Text(w.kind.name).font(.headline)
+                                Spacer()
+                                Toggle("", isOn: $s.widgets[i].enabled.animation(.smooth)).toggleStyle(.switch).labelsHidden()
+                            }
+                            if w.enabled {
+                                HStack {
+                                    Picker("", selection: $s.widgets[i].style.animation(.smooth)) {
+                                        ForEach(WStyle.allCases, id: \.self) { Text($0.name).tag($0) }
+                                    }
+                                    .pickerStyle(.segmented).labelsHidden()
+                                    PositionPicker(pos: $s.widgets[i].pos)
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                }
+                .frame(width: 360)
+                SaverPreview(scale: 0.27)
+            }
+            Spacer()
+        }
+    }
+}
