@@ -14,3 +14,16 @@ private let verses: [(String, String)] = [
     ("Fürchte dich nicht, denn ich bin mit dir.", "Jesaja 41,10"),
     ("Gott ist Liebe.", "1. Johannes 4,16"),
 ]
+
+// MARK: - Battery status via IOKit
+private func battery() -> (Int, Bool)? {
+    guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+          let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
+    for ps in list {
+        if let d = IOPSGetPowerSourceDescription(info, ps)?.takeUnretainedValue() as? [String: Any],
+           let cap = d[kIOPSCurrentCapacityKey] as? Int {
+            return (cap, d[kIOPSIsChargingKey] as? Bool ?? false)
+        }
+    }
+    return nil
+}
