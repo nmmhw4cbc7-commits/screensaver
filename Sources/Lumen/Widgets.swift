@@ -102,3 +102,29 @@ private struct StyleMod: ViewModifier {
         }
     }
 }
+
+// MARK: - Full-screen saver composition with burn-in drift
+struct SaverView: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        ZStack {
+            BackgroundView(bg: s.bg)
+            TimelineView(.periodic(from: .now, by: 4)) { tl in
+                let t = tl.date.timeIntervalSinceReferenceDate
+                ZStack {
+                    ForEach(Pos.allCases) { p in
+                        let ws = s.widgets.filter { $0.enabled && $0.pos == p }
+                        if !ws.isEmpty {
+                            VStack(alignment: p.hAlign, spacing: 22) { ForEach(ws) { WidgetView(conf: $0) } }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: p.alignment)
+                        }
+                    }
+                }
+                .padding(80)
+                .offset(x: 14 * sin(t / 40), y: 10 * cos(t / 53))
+                .animation(.easeInOut(duration: 4), value: t)
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
