@@ -18,3 +18,44 @@ struct LumenApp: App {
         }
     }
 }
+
+// MARK: - App delegate managing onboarding and settings windows
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    static var shared: AppDelegate!
+    private var win: NSWindow?
+
+    func applicationDidFinishLaunching(_ n: Notification) {
+        Self.shared = self
+        SaverController.shared.start()
+        if !Store.shared.onboarded { showOnboarding() }
+    }
+
+    func applicationShouldHandleReopen(_ s: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        showSettings(); return false
+    }
+
+    private func present<V: View>(_ v: V, title: String, chrome: Bool) {
+        win?.close()
+        let w = NSWindow(contentRect: .zero, styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        w.title = title
+        w.titlebarAppearsTransparent = !chrome
+        w.titleVisibility = chrome ? .visible : .hidden
+        w.isReleasedWhenClosed = false
+        w.contentViewController = NSHostingController(rootView: v)
+        w.center()
+        win = w
+        NSApp.activate(ignoringOtherApps: true)
+        w.makeKeyAndOrderFront(nil)
+    }
+
+    func showOnboarding() {
+        present(OnboardingView { [weak self] in
+            Store.shared.onboarded = true
+            self?.win?.close()
+        }, title: "Willkommen", chrome: false)
+    }
+
+    func showSettings() {
+        present(SettingsView(), title: "Lumen Einstellungen", chrome: true)
+    }
+}
