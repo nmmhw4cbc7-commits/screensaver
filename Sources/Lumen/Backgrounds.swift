@@ -73,3 +73,36 @@ private struct Blobs: View {
             .blendMode(.screen)
     }
 }
+
+// MARK: - Mesh gradient and spectrum backgrounds
+private struct Mesh: View {
+    let t: Double
+    var body: some View {
+        let p = { (a: Double, b: Double) -> SIMD2<Float> in [Float(a), Float(b)] }
+        MeshGradient(width: 3, height: 3, points: [
+            p(0, 0), p(0.5 + 0.2 * sin(t * 0.21), 0), p(1, 0),
+            p(0, 0.5 + 0.2 * cos(t * 0.17)), p(0.5 + 0.25 * sin(t * 0.3), 0.5 + 0.25 * cos(t * 0.23)), p(1, 0.5 + 0.2 * sin(t * 0.19)),
+            p(0, 1), p(0.5 + 0.2 * cos(t * 0.25), 1), p(1, 1),
+        ], colors: (0..<9).map { i in
+            let f = Double(i)
+            let h = fract(0.55 + f * 0.045 + t * 0.008 + 0.05 * sin(t * 0.1 + f))
+            return Color(hue: h, saturation: 0.75, brightness: 0.45 + 0.35 * hash(f))
+        })
+    }
+}
+
+private struct Spectrum: View {
+    let t: Double
+    var body: some View {
+        GeometryReader { g in
+            let m = max(g.size.width, g.size.height)
+            ZStack {
+                AngularGradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red], center: .center, angle: .degrees(t * 8))
+                    .frame(width: m * 1.6, height: m * 1.6)
+                    .blur(radius: m * 0.08)
+                RadialGradient(colors: [.black.opacity(0.1), .black.opacity(0.85)], center: .center, startRadius: m * 0.05, endRadius: m * 0.6)
+            }
+            .frame(width: g.size.width, height: g.size.height)
+        }
+    }
+}
