@@ -179,3 +179,34 @@ struct WidgetsPage: View {
         }
     }
 }
+
+// MARK: - Idle duration page
+struct DurationPage: View {
+    @ObservedObject var s = Store.shared
+    private let options = [1, 2, 5, 10, 15, 30, 60, 0]
+    var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Wann soll Lumen starten?", subtitle: "Nach dieser Zeit ohne Maus- oder Tastatureingabe.")
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(120), spacing: 16), count: 4), spacing: 16) {
+                ForEach(options, id: \.self) { m in
+                    let sel = s.idleMinutes == m
+                    VStack(spacing: 2) {
+                        Text(m == 0 ? "∞" : "\(m)").font(.system(size: 34, weight: .semibold, design: .rounded))
+                        Text(m == 0 ? "Nur manuell" : m == 1 ? "Minute" : "Minuten").font(.callout).foregroundStyle(sel ? .white.opacity(0.85) : .secondary)
+                    }
+                    .frame(width: 120, height: 92)
+                    .foregroundStyle(sel ? .white : .primary)
+                    .background(sel ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary.opacity(0.6)),
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation(.spring(duration: 0.3)) { s.idleMinutes = m } }
+                }
+            }
+            Toggle("Lumen beim Anmelden automatisch öffnen", isOn: Binding(get: { s.launchAtLogin }, set: { s.launchAtLogin = $0 }))
+                .toggleStyle(.switch).padding(.top, 30)
+            Label("Zum Beenden einfach die Maus bewegen oder eine Taste drücken.", systemImage: "cursorarrow.motionlines")
+                .foregroundStyle(.secondary).padding(.top, 14)
+            Spacer()
+        }
+    }
+}
