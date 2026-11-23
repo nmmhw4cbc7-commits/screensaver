@@ -267,3 +267,63 @@ private struct Dusk: View {
         }
     }
 }
+
+// MARK: - Own photos with Ken Burns crossfade
+final class PhotoLib {
+    static let shared = PhotoLib()
+    private var folder = ""
+    private var urls: [URL] = []
+    private var cache: [Int: NSImage] = [:]
+
+    var count: Int { refresh(); return urls.count }
+
+    private func refresh() {
+        let f = Store.shared.photoFolder
+        guard f != folder else { return }
+        folder = f; cache = [:]
+        let exts = ["jpg", "jpeg", "png", "heic", "tiff", "webp"]
+        urls = ((try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: f), includingPropertiesForKeys: nil)) ?? [])
+            .filter { exts.contains($0.pathExtension.lowercased()) }
+            .sorted { $0.path < $1.path }
+    }
+
+    func image(_ i: Int) -> NSImage? {
+        refresh()
+        guard !urls.isEmpty else { return nil }
+        let k = i % urls.count
+        if let im = cache[k] { return im }
+        if cache.count > 3 { cache = [:] }
+        cache[k] = NSImage(contentsOf: urls[k])
+        return cache[k]
+    }
+}
+
+private struct Photos: View {
+    let t: Double
+    var body: some View {
+        let i = Int(t / 12)
+        let p = fract(t / 12)
+        GeometryReader { g in
+            ZStack {
+                if let im = PhotoLib.shared.image(i) {
+                    Image(nsImage: im).resizable().aspectRatio(contentMode: .fill)
+                        .frame(width: g.size.width, height: g.size.height)
+                        .scaleEffect(1.05 + 0.1 * p)
+                        .offset(x: g.size.width * 0.02 * (p - 0.5) * (i % 2 == 0 ? 1 : -1))
+                        .id(i)
+                        .transition(.opacity)
+                } else {
+                    Mesh(t: t)
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo.stack").font(.system(size: g.size.height * 0.08))
+                        Text("Fotoordner in den Einstellungen wählen").font(.system(size: g.size.height * 0.03, weight: .medium))
+                    }
+                    .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+            .frame(width: g.size.width, height: g.size.height)
+            .clipped()
+            .animation(.easeInOut(duration: 1.6), value: i)
+        }
+    }
+}
