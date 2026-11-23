@@ -244,3 +244,26 @@ private struct Particles: View {
             .blendMode(.screen)
     }
 }
+
+// MARK: - Dusk scene
+private struct Dusk: View {
+    let t: Double
+    var body: some View {
+        GeometryReader { g in
+            let s = g.size
+            let k = 0.5 + 0.5 * sin(t * 0.02)
+            ZStack {
+                LinearGradient(colors: [Color(hue: 0.64, saturation: 0.6, brightness: 0.18 + 0.2 * k),
+                                        Color(hue: 0.93, saturation: 0.5, brightness: 0.45 + 0.3 * k),
+                                        Color(hue: 0.07, saturation: 0.8, brightness: 0.95)], startPoint: .top, endPoint: .bottom)
+                Circle().fill(Color(hue: 0.1, saturation: 0.55, brightness: 1))
+                    .frame(width: s.height * 0.22, height: s.height * 0.22)
+                    .shadow(color: .orange, radius: s.height * 0.1)
+                    .position(x: s.width * 0.5, y: s.height * (0.74 - 0.12 * k))
+                LinearGradient(colors: [Color(hue: 0.75, saturation: 0.5, brightness: 0.16), .black], startPoint: .top, endPoint: .bottom)
+                    .frame(height: s.height * 0.26)
+                    .position(x: s.width / 2, y: s.height * 0.87)
+            }
+        }
+    }
+}
