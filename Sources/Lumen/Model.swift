@@ -65,3 +65,19 @@ enum Pos: String, CaseIterable, Codable, Identifiable {
         }
     }
 }
+
+// MARK: - Widget configuration with defaults
+struct WConf: Codable, Identifiable, Hashable {
+    var kind: WKind
+    var enabled: Bool
+    var style: WStyle
+    var pos: Pos
+    var id: WKind { kind }
+
+    static let defaults: [WConf] = [
+        .init(kind: .clock, enabled: true, style: .minimal, pos: .center),
+        .init(kind: .date, enabled: true, style: .minimal, pos: .center),
+        .init(kind: .battery, enabled: false, style: .glass, pos: .topTrailing),
+        .init(kind: .verse, enabled: true, style: .glass, pos: .bottomLeading),
+    ]
+}
