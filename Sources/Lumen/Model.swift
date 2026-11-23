@@ -49,3 +49,19 @@ enum WStyle: String, CaseIterable, Codable {
         }
     }
 }
+
+// MARK: - Nine-point widget placement grid
+enum Pos: String, CaseIterable, Codable, Identifiable {
+    case topLeading, top, topTrailing, leading, center, trailing, bottomLeading, bottom, bottomTrailing
+    var id: String { rawValue }
+    var alignment: Alignment {
+        [.topLeading, .top, .topTrailing, .leading, .center, .trailing, .bottomLeading, .bottom, .bottomTrailing][Pos.allCases.firstIndex(of: self)!]
+    }
+    var hAlign: HorizontalAlignment {
+        switch alignment.horizontal {
+        case .leading: .leading
+        case .trailing: .trailing
+        default: .center
+        }
+    }
+}
