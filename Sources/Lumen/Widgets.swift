@@ -50,3 +50,56 @@ final class Weather {
         }
     }
 }
+
+// MARK: - System, battery, moon and quote data
+enum Sys {
+    static func cpu() -> Double {
+        var l = [Double](repeating: 0, count: 3)
+        getloadavg(&l, 3)
+        return min(1, l[0] / Double(ProcessInfo.processInfo.activeProcessorCount))
+    }
+
+    static func mem() -> Double {
+        var s = vm_statistics64()
+        var c = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+        let r = withUnsafeMutablePointer(to: &s) { $0.withMemoryRebound(to: integer_t.self, capacity: Int(c)) { host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &c) } }
+        guard r == KERN_SUCCESS else { return 0 }
+        let used = Double(UInt64(s.active_count) + UInt64(s.wire_count) + UInt64(s.compressor_page_count)) * Double(vm_kernel_page_size)
+        return min(1, used / Double(ProcessInfo.processInfo.physicalMemory))
+    }
+
+    static func battery() -> (Int, Bool)? {
+        guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+              let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
+        for ps in list {
+            if let d = IOPSGetPowerSourceDescription(info, ps)?.takeUnretainedValue() as? [String: Any],
+               let cap = d[kIOPSCurrentCapacityKey] as? Int {
+                return (cap, d[kIOPSIsChargingKey] as? Bool ?? false)
+            }
+        }
+        return nil
+    }
+
+    static func moon(_ d: Date) -> (String, String, Double) {
+        let age = fract((d.timeIntervalSince1970 - 947_182_440) / 86400 / 29.530588853)
+        let i = Int((age * 8).rounded()) % 8
+        let names = ["Neumond", "Zunehmende Sichel", "Erstes Viertel", "Zunehmender Mond", "Vollmond", "Abnehmender Mond", "Letztes Viertel", "Abnehmende Sichel"]
+        let syms = ["new.moon", "waxing.crescent", "first.quarter", "waxing.gibbous", "full.moon", "waning.gibbous", "last.quarter", "waning.crescent"]
+        return ("moonphase." + syms[i], names[i], (1 - cos(age * 2 * .pi)) / 2)
+    }
+
+    static let quotes: [(String, String)] = [
+        ("Es ist nicht wenig Zeit, die wir haben, sondern viel Zeit, die wir nicht nutzen.", "Seneca"),
+        ("Auch aus Steinen, die einem in den Weg gelegt werden, kann man Schönes bauen.", "Goethe"),
+        ("Eine Reise von tausend Meilen beginnt mit dem ersten Schritt.", "Laozi"),
+        ("Das Glück deines Lebens hängt von der Beschaffenheit deiner Gedanken ab.", "Marc Aurel"),
+        ("Phantasie ist wichtiger als Wissen.", "Albert Einstein"),
+        ("Einfachheit ist die höchste Stufe der Vollendung.", "Leonardo da Vinci"),
+        ("Nicht weil es schwer ist, wagen wir es nicht, sondern weil wir es nicht wagen, ist es schwer.", "Seneca"),
+        ("Die Zukunft hängt davon ab, was wir heute tun.", "Mahatma Gandhi"),
+        ("Wer immer tut, was er schon kann, bleibt immer das, was er schon ist.", "Henry Ford"),
+        ("Tu erst das Notwendige, dann das Mögliche, und plötzlich schaffst du das Unmögliche.", "Franz von Assisi"),
+        ("In der Ruhe liegt die Kraft.", "Sprichwort"),
+        ("Wer aufhört, besser zu werden, hat aufgehört, gut zu sein.", "Philip Rosenthal"),
+    ]
+}
