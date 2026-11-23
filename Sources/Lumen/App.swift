@@ -1,6 +1,7 @@
 import SwiftUI
+import IOKit.pwr_mgt
 
-// MARK: - Menu bar app entry point
+// MARK: - Menu bar app entry point with quick designs
 @main
 struct LumenApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -8,6 +9,9 @@ struct LumenApp: App {
         MenuBarExtra("Lumen", systemImage: "sparkles") {
             Button("Bildschirmschoner starten") { SaverController.shared.show() }
                 .keyboardShortcut("s")
+            Menu("Design") {
+                ForEach(presets) { p in Button(p.name) { Store.shared.look = p.look } }
+            }
             Divider()
             Button("Einstellungen …") { AppDelegate.shared.showSettings() }
                 .keyboardShortcut(",")
@@ -19,7 +23,7 @@ struct LumenApp: App {
     }
 }
 
-// MARK: - App delegate managing onboarding and settings windows
+// MARK: - App delegate managing windows
 final class AppDelegate: NSObject, NSApplicationDelegate {
     static var shared: AppDelegate!
     private var win: NSWindow?
@@ -27,19 +31,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ n: Notification) {
         Self.shared = self
         SaverController.shared.start()
-        if !Store.shared.onboarded { showOnboarding() }
+        let args = CommandLine.arguments
+        if let i = args.firstIndex(of: "--preset"), i + 1 < args.count, let n = Int(args[i + 1]), presets.indices.contains(n) {
+            Store.shared.look = presets[n].look
+        }
+        if args.contains("--preview") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SaverController.shared.show() }
+        } else if !Store.shared.onboarded { showOnboarding() }
     }
 
     func applicationShouldHandleReopen(_ s: NSApplication, hasVisibleWindows: Bool) -> Bool {
         showSettings(); return false
     }
 
-    private func present<V: View>(_ v: V, title: String, chrome: Bool) {
+    private func present<V: View>(_ v: V, title: String, settings: Bool) {
         win?.close()
-        let w = NSWindow(contentRect: .zero, styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        var mask: NSWindow.StyleMask = [.titled, .closable, .fullSizeContentView]
+        if settings { mask.formUnion([.miniaturizable, .resizable]) }
+        let w = NSWindow(contentRect: .zero, styleMask: mask, backing: .buffered, defer: false)
         w.title = title
-        w.titlebarAppearsTransparent = !chrome
-        w.titleVisibility = chrome ? .visible : .hidden
+        w.titlebarAppearsTransparent = !settings
+        w.titleVisibility = settings ? .visible : .hidden
         w.isReleasedWhenClosed = false
         let host = NSHostingController(rootView: v)
         w.contentViewController = host
@@ -51,26 +63,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showOnboarding() {
-        present(OnboardingView { [weak self] in
+        present(OnboardingView { [weak self] edit in
             Store.shared.onboarded = true
             self?.win?.close()
-        }, title: "Willkommen", chrome: false)
+            if edit { self?.showSettings(.widgets) }
+        }, title: "Willkommen", settings: false)
     }
 
-    func showSettings() {
-        present(SettingsView(), title: "Lumen Einstellungen", chrome: true)
+    func showSettings(_ section: SettingsSection = .looks) {
+        present(SettingsView(sel: section), title: "Lumen", settings: true)
     }
 }
 
-// MARK: - Idle detection and saver activation
+// MARK: - Key-capable full-screen window
+final class SaverWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+// MARK: - Idle detection, video awareness and display sleep
 final class SaverController {
     static let shared = SaverController()
     private var windows: [NSWindow] = []
     private var shownAt = Date.distantPast
     private var timer: Timer?
+    private var monitor: Any?
+    private var prevApp: NSRunningApplication?
+    private var startMouse = NSPoint.zero
+    private var cursorHidden = false
+    private var slept = false
 
     private var idle: Double {
         CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+    }
+
+    /// true while e.g. a video or presentation keeps the display awake
+    private var displayBusy: Bool {
+        var d: Unmanaged<CFDictionary>?
+        guard IOPMCopyAssertionsStatus(&d) == kIOReturnSuccess,
+              let dict = d?.takeRetainedValue() as? [String: Int] else { return false }
+        return (dict["PreventUserIdleDisplaySleep"] ?? 0) > 0
     }
 
     func start() {
@@ -78,40 +110,69 @@ final class SaverController {
     }
 
     private func tick() {
-        let mins = Store.shared.idleMinutes
+        let s = Store.shared
         if windows.isEmpty {
-            if mins > 0, idle >= Double(mins * 60) { show() }
-        } else if Date().timeIntervalSince(shownAt) > 2, idle < 0.6 {
-            hide()
+            guard s.idleMinutes > 0, idle >= Double(s.idleMinutes * 60) else { return }
+            if s.skipVideo && displayBusy { return }
+            show()
+            return
+        }
+        let running = Date().timeIntervalSince(shownAt)
+        if !NSApp.isActive, running > 2, idle < 0.5 { hide(); return }
+        if s.displaySleep > 0, !slept, running > Double(s.displaySleep * 60) {
+            slept = true
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+            p.arguments = ["displaysleepnow"]
+            try? p.run()
         }
     }
 
-    // MARK: - Multi-display saver windows with fade transitions
+    // MARK: - Show and dismiss with event capture
     func show() {
         guard windows.isEmpty else { return }
         shownAt = Date()
+        slept = false
+        prevApp = NSWorkspace.shared.frontmostApplication
+        NSApp.activate(ignoringOtherApps: true)
         for screen in NSScreen.screens {
-            let w = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+            let w = SaverWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
             w.level = .screenSaver
             w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             w.isReleasedWhenClosed = false
             w.backgroundColor = .black
-            w.contentView = NSHostingView(rootView: SaverView())
+            w.acceptsMouseMovedEvents = true
+            w.contentView = NSHostingView(rootView: SaverCanvas(look: .constant(Store.shared.look)))
             w.setFrame(screen.frame, display: true)
             w.alphaValue = 0
-            w.orderFrontRegardless()
             windows.append(w)
         }
-        NSCursor.hide()
+        windows.first?.makeKeyAndOrderFront(nil)
+        windows.dropFirst().forEach { $0.orderFrontRegardless() }
+        if !cursorHidden { NSCursor.hide(); cursorHidden = true }
+        startMouse = NSEvent.mouseLocation
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel, .mouseMoved]) { [weak self] e in
+            guard let self else { return e }
+            if e.type == .mouseMoved {
+                let p = NSEvent.mouseLocation
+                if hypot(p.x - self.startMouse.x, p.y - self.startMouse.y) < 14 { return nil }
+            }
+            if Date().timeIntervalSince(self.shownAt) > 0.8 { self.hide() }
+            return nil
+        }
         NSAnimationContext.runAnimationGroup { $0.duration = 1.2; windows.forEach { $0.animator().alphaValue = 1 } }
     }
 
     func hide() {
+        guard !windows.isEmpty else { return }
         let ws = windows
         windows = []
-        NSCursor.unhide()
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        if cursorHidden { NSCursor.unhide(); cursorHidden = false }
         NSAnimationContext.runAnimationGroup({ $0.duration = 0.35; ws.forEach { $0.animator().alphaValue = 0 } }) {
             ws.forEach { $0.contentView = nil; $0.close() }
         }
+        prevApp?.activate()
     }
 }
