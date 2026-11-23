@@ -123,3 +123,38 @@ struct StyleKit {
         }
     }
 }
+
+// MARK: - Chrome modifier for all nine styles
+struct Chrome: ViewModifier {
+    let kit: StyleKit
+    func body(content: Content) -> some View {
+        let c = content.foregroundStyle(kit.fg).textCase(kit.style == .mono ? .uppercase : nil)
+        switch kit.style {
+        case .glass:
+            c.padding(.horizontal, 28).padding(.vertical, 20)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.18)))
+                .environment(\.colorScheme, .dark)
+        case .minimal, .serif:
+            c.shadow(color: .black.opacity(0.3), radius: 12)
+        case .bold:
+            c.shadow(color: .black.opacity(0.5), radius: 24, y: 6)
+        case .mono:
+            c.tracking(2).padding(.horizontal, 22).padding(.vertical, 16)
+                .overlay(Rectangle().strokeBorder(kit.tint.opacity(0.55), lineWidth: 1))
+        case .neon:
+            c.shadow(color: kit.tint, radius: 3).shadow(color: kit.tint.opacity(0.8), radius: 14).shadow(color: kit.tint.opacity(0.5), radius: 34)
+        case .outline:
+            c.padding(.horizontal, 26).padding(.vertical, 18)
+                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(kit.tint.opacity(0.8), lineWidth: 2))
+        case .card:
+            c.padding(.leading, 46).padding(.trailing, 30).padding(.vertical, 20)
+                .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(alignment: .leading) { Capsule().fill(kit.tint).frame(width: 4).padding(.vertical, 18).padding(.leading, 14) }
+        case .color:
+            c.padding(.horizontal, 28).padding(.vertical, 20)
+                .background(kit.tint.opacity(0.92), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+                .shadow(color: .black.opacity(0.3), radius: 20, y: 8)
+        }
+    }
+}
