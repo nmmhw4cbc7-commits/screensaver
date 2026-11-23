@@ -116,4 +116,50 @@ struct Inspector: View {
                                    description: Text("Klicke ein Widget in der Vorschau an oder füge ein neues hinzu."))
         }
     }
+
+    // MARK: - Per-widget parameters
+    @ViewBuilder private func params(_ item: WItem, _ id: UUID) -> some View {
+        switch item.kind {
+        case .weather:
+            group("Ort") { TextField("Stadt", text: bind(\.param, id, "")).textFieldStyle(.roundedBorder) }
+        case .world:
+            group("Zeitzone") {
+                Picker("", selection: bind(\.param, id, "")) {
+                    ForEach(zones, id: \.self) { Text($0.replacingOccurrences(of: "_", with: " ")).tag($0) }
+                }
+                .labelsHidden()
+            }
+        case .countdown:
+            group("Ereignis") {
+                TextField("Titel", text: bind(\.param, id, "")).textFieldStyle(.roundedBorder)
+                DatePicker("", selection: bind(\.date, id, .now)).labelsHidden()
+            }
+        case .greeting:
+            group("Name") { TextField("Name", text: bind(\.param, id, "")).textFieldStyle(.roundedBorder) }
+        case .text:
+            group("Text") { TextField("Text", text: bind(\.param, id, ""), axis: .vertical).lineLimit(2...5).textFieldStyle(.roundedBorder) }
+        default:
+            EmptyView()
+        }
+    }
+
+    private func group<C: View>(_ title: String, @ViewBuilder _ c: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            c()
+        }
+    }
+
+    private func bind<T>(_ kp: WritableKeyPath<WItem, T>, _ id: UUID, _ def: T) -> Binding<T> {
+        Binding(get: { s.look.items.first { $0.id == id }?[keyPath: kp] ?? def },
+                set: { v in if let i = s.look.items.firstIndex(where: { $0.id == id }) { s.look.items[i][keyPath: kp] = v } })
+    }
+
+    private func duplicate(_ item: WItem) {
+        var c = item
+        c.id = UUID()
+        c.x = min(0.95, item.x + 0.05); c.y = min(0.95, item.y + 0.05)
+        s.look.items.append(c)
+        selection = c.id
+    }
 }
