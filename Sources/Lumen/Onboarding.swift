@@ -87,3 +87,29 @@ struct WelcomePage: View {
         }
     }
 }
+
+// MARK: - Design preset gallery
+struct LooksPage: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Wähle ein Design", subtitle: "Ein Startpunkt – alles lässt sich später anpassen.")
+            ScrollView {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(200), spacing: 18), count: 4), spacing: 18) {
+                    ForEach(presets) { p in
+                        let sel = s.look == p.look
+                        VStack(spacing: 8) {
+                            LookThumb(look: p.look, width: 200)
+                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.accentColor, lineWidth: sel ? 3 : 0))
+                                .shadow(color: .black.opacity(sel ? 0.3 : 0.12), radius: sel ? 10 : 5, y: 3)
+                            Text(p.name).font(.headline).foregroundStyle(sel ? Color.accentColor : .primary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { withAnimation(.spring(duration: 0.35)) { s.look = p.look } }
+                    }
+                }
+                .padding(.bottom, 20)
+            }
+        }
+    }
+}
