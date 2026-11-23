@@ -64,3 +64,56 @@ struct EditorPage: View {
         selection = it.id
     }
 }
+
+// MARK: - Inspector for the selected widget
+struct Inspector: View {
+    @ObservedObject var s = Store.shared
+    @Binding var selection: UUID?
+
+    var body: some View {
+        if let id = selection, let item = s.look.items.first(where: { $0.id == id }) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Label(item.kind.name, systemImage: item.kind.symbol).font(.title3.bold())
+                    group("Stil") {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                            ForEach(WStyle.allCases) { st in
+                                let on = item.style == st
+                                Text(st.name).font(.callout.weight(.medium))
+                                    .frame(maxWidth: .infinity).padding(.vertical, 7)
+                                    .foregroundStyle(on ? .white : .primary)
+                                    .background(on ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary), in: RoundedRectangle(cornerRadius: 8))
+                                    .onTapGesture { bind(\.style, id, item.style).wrappedValue = st }
+                            }
+                        }
+                    }
+                    group("Farbe") {
+                        HStack(spacing: 9) {
+                            ForEach(tints.indices, id: \.self) { t in
+                                Circle().fill(tints[t]).frame(width: 24, height: 24)
+                                    .overlay(Circle().strokeBorder(.primary.opacity(0.2)))
+                                    .overlay(Circle().strokeBorder(Color.accentColor, lineWidth: item.tint == t ? 2.5 : 0).padding(-4))
+                                    .onTapGesture { bind(\.tint, id, 0).wrappedValue = t }
+                            }
+                        }
+                    }
+                    group("Größe") { Slider(value: bind(\.scale, id, 1), in: 0.4...2.2) }
+                    params(item, id)
+                    Divider()
+                    HStack {
+                        Button { duplicate(item) } label: { Label("Duplizieren", systemImage: "plus.square.on.square") }
+                        Spacer()
+                        Button(role: .destructive) {
+                            selection = nil
+                            s.look.items.removeAll { $0.id == id }
+                        } label: { Label("Entfernen", systemImage: "trash") }
+                    }
+                }
+                .padding(20)
+            }
+        } else {
+            ContentUnavailableView("Kein Widget ausgewählt", systemImage: "cursorarrow.click.2",
+                                   description: Text("Klicke ein Widget in der Vorschau an oder füge ein neues hinzu."))
+        }
+    }
+}
