@@ -66,3 +66,12 @@ struct WItem: Codable, Identifiable, Hashable {
         date = Calendar.current.date(byAdding: .day, value: 30, to: .now)!
     }
 }
+
+// MARK: - Look combining background and widgets
+struct Look: Codable, Equatable {
+    var bg: BG
+    var speed = 1.0
+    var hue = 0.0
+    var dim = 0.0
+    var items: [WItem]
+}
