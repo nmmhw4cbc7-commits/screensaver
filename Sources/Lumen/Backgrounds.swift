@@ -204,3 +204,43 @@ private struct Rain: View {
         }
     }
 }
+
+// MARK: - Bokeh lights and fireflies
+private struct Particles: View {
+    let t: Double
+    let fireflies: Bool
+    var body: some View {
+        GeometryReader { g in
+            let s = g.size, m = min(s.width, s.height)
+            ZStack {
+                LinearGradient(colors: fireflies ? [Color(red: 0.02, green: 0.06, blue: 0.05), Color(red: 0.01, green: 0.02, blue: 0.03)]
+                                                 : [Color(red: 0.12, green: 0.04, blue: 0.1), Color(red: 0.02, green: 0.01, blue: 0.05)],
+                               startPoint: .top, endPoint: .bottom)
+                ForEach(0..<(fireflies ? 60 : 34), id: \.self) { i in dot(Double(i), s, m) }
+            }
+        }
+    }
+
+    private func dot(_ f: Double, _ s: CGSize, _ m: CGFloat) -> some View {
+        let d: CGFloat = fireflies ? m * (0.006 + 0.01 * hash(f + 1)) : m * (0.04 + 0.16 * hash(f + 1))
+        let hue = fireflies ? 0.16 + 0.06 * hash(f + 4) : 0.02 + 0.13 * hash(f + 4)
+        let glow = fireflies ? 0.5 + 0.5 * sin(t * (1 + hash(f + 9)) + f) : 0.35 + 0.3 * hash(f + 6)
+        let x: CGFloat
+        let y: CGFloat
+        if fireflies {
+            x = s.width * fract(hash(f + 3) + 0.06 * sin(t * 0.13 + f))
+            y = s.height * fract(hash(f + 2) + 0.05 * cos(t * 0.11 + f * 1.3))
+        } else {
+            let r = fract(hash(f + 2) + t * (0.008 + 0.02 * hash(f + 5)))
+            x = s.width * hash(f + 3) + 40 * sin(t * 0.2 + f)
+            y = (s.height + d * 2) * (1 - r) - d
+        }
+        let col = Color(hue: hue, saturation: fireflies ? 0.8 : 0.7, brightness: 1)
+        return Circle().fill(col.opacity(glow))
+            .frame(width: d, height: d)
+            .blur(radius: fireflies ? d * 0.3 : d * (0.05 + 0.25 * hash(f + 8)))
+            .shadow(color: fireflies ? col.opacity(glow) : .clear, radius: d * 1.5)
+            .position(x: x, y: y)
+            .blendMode(.screen)
+    }
+}
