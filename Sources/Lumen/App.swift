@@ -9,8 +9,11 @@ struct LumenApp: App {
         MenuBarExtra("Lumen", systemImage: "sparkles") {
             Button("Bildschirmschoner starten") { SaverController.shared.show() }
                 .keyboardShortcut("s")
-            Menu("Design") {
-                ForEach(presets) { p in Button(p.name) { Store.shared.look = p.look } }
+            Menu("Uhr") {
+                ForEach(Face.allCases) { f in Button(f.name) { Store.shared.look.face = f } }
+            }
+            Menu("Hintergrund") {
+                ForEach(BG.allCases) { b in Button(b.name) { Store.shared.look.bg = b } }
             }
             Divider()
             Button("Einstellungen …") { AppDelegate.shared.showSettings() }
@@ -32,8 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Self.shared = self
         SaverController.shared.start()
         let args = CommandLine.arguments
-        if let i = args.firstIndex(of: "--preset"), i + 1 < args.count, let n = Int(args[i + 1]), presets.indices.contains(n) {
-            Store.shared.look = presets[n].look
+        if let i = args.firstIndex(of: "--face"), i + 1 < args.count, let n = Int(args[i + 1]), Face.allCases.indices.contains(n) {
+            Store.shared.look.face = Face.allCases[n]
+        }
+        if let i = args.firstIndex(of: "--bg"), i + 1 < args.count, let n = Int(args[i + 1]), BG.allCases.indices.contains(n) {
+            Store.shared.look.bg = BG.allCases[n]
         }
         if args.contains("--preview") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SaverController.shared.show() }
@@ -66,11 +72,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         present(OnboardingView { [weak self] edit in
             Store.shared.onboarded = true
             self?.win?.close()
-            if edit { self?.showSettings(.widgets) }
+            if edit { self?.showSettings(.style) }
         }, title: "Willkommen", settings: false)
     }
 
-    func showSettings(_ section: SettingsSection = .looks) {
+    func showSettings(_ section: SettingsSection = .clock) {
         present(SettingsView(sel: section), title: "Lumen", settings: true)
     }
 }
@@ -142,7 +148,7 @@ final class SaverController {
             w.isReleasedWhenClosed = false
             w.backgroundColor = .black
             w.acceptsMouseMovedEvents = true
-            w.contentView = NSHostingView(rootView: SaverCanvas(look: .constant(Store.shared.look)))
+            w.contentView = NSHostingView(rootView: SaverCanvas(look: Store.shared.look))
             w.setFrame(screen.frame, display: true)
             w.alphaValue = 0
             windows.append(w)
