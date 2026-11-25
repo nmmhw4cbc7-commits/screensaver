@@ -276,3 +276,44 @@ struct DotDigits: View {
         .frame(width: CGFloat(cols) * step - (step - dot), height: 7 * step - (step - dot))
     }
 }
+
+// MARK: - Seven-segment digits
+struct SegDigits: View {
+    let text: String
+    let color: Color
+    static let map: [Character: Int] = ["0": 0x3F, "1": 0x06, "2": 0x5B, "3": 0x4F, "4": 0x66, "5": 0x6D, "6": 0x7D, "7": 0x07, "8": 0x7F, "9": 0x6F]
+    var body: some View {
+        let w: CGFloat = 124, h: CGFloat = 230, th: CGFloat = 22, gap: CGFloat = 36, colonW: CGFloat = 40
+        let total = text.reduce(CGFloat(0)) { $0 + ($1 == ":" ? colonW : w) + gap } - gap
+        Canvas { ctx, _ in
+            var x: CGFloat = 0
+            for ch in text {
+                if ch == ":" {
+                    for y in [h * 0.3, h * 0.7] {
+                        ctx.fill(Path(ellipseIn: CGRect(x: x + colonW / 2 - th / 2, y: y - th / 2, width: th, height: th)), with: .color(color))
+                    }
+                    x += colonW + gap
+                    continue
+                }
+                let bits = Self.map[ch] ?? 0
+                let v = h / 2 - th * 1.5
+                let segs = [
+                    CGRect(x: x + th, y: 0, width: w - 2 * th, height: th),
+                    CGRect(x: x + w - th, y: th, width: th, height: v),
+                    CGRect(x: x + w - th, y: h / 2 + th / 2, width: th, height: v),
+                    CGRect(x: x + th, y: h - th, width: w - 2 * th, height: th),
+                    CGRect(x: x, y: h / 2 + th / 2, width: th, height: v),
+                    CGRect(x: x, y: th, width: th, height: v),
+                    CGRect(x: x + th, y: h / 2 - th / 2, width: w - 2 * th, height: th),
+                ]
+                for (i, r) in segs.enumerated() {
+                    let on = (bits >> i) & 1 == 1
+                    ctx.fill(Path(roundedRect: r.insetBy(dx: 2, dy: 2), cornerRadius: th / 2), with: .color(color.opacity(on ? 1 : 0.07)))
+                }
+                x += w + gap
+            }
+        }
+        .frame(width: total, height: h)
+        .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.08, d: 1, tx: h * 0.04, ty: 0))
+    }
+}
