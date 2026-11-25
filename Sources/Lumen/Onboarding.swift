@@ -24,7 +24,7 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case 0: WelcomePage()
-                case 1: LooksPage()
+                case 1: FacesPage()
                 case 2: BackgroundPage()
                 case 3: BehaviorPage()
                 default: DonePage(edit: { finish(true) })
@@ -62,15 +62,15 @@ struct OnboardingView: View {
 // MARK: - Welcome page
 struct WelcomePage: View {
     private let features: [(String, String, String)] = [
-        ("sparkles", "12 lebendige Hintergründe", "Von Aurora bis Sternenflug – oder deine eigenen Fotos."),
-        ("square.grid.3x3.square", "14 Widgets, 9 Stile, 8 Farben", "Uhr, Wetter, Weltzeit, Kalender, Countdown und mehr – frei platzierbar."),
-        ("wand.and.stars", "Fertige Designs", "Ein Klick für einen perfekt abgestimmten Look."),
-        ("moon.zzz", "Startet von selbst", "Pausiert bei Videos, schläft den Bildschirm auf Wunsch ein."),
+        ("clock", "16 Zifferblätter", "Von Klappzahlen über Wortuhr bis Nixie-Röhre."),
+        ("sparkles", "16 lebendige Hintergründe", "Frei kombinierbar – oder deine eigenen Fotos."),
+        ("textformat", "Schrift & Farbe", "Sechs Schriften, zehn Farben, Datum und Wetter."),
+        ("moon.zzz", "Startet von selbst", "Pausiert bei Videos, schaltet den Bildschirm auf Wunsch aus."),
     ]
     var body: some View {
         VStack(spacing: 0) {
             Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 116, height: 116).padding(.top, 34)
-            PageHeader(title: "Willkommen bei Lumen", subtitle: "Dein Bildschirm, wenn du gerade nicht hinsiehst.").padding(.top, -22)
+            PageHeader(title: "Willkommen bei Lumen", subtitle: "Deine Uhr. Dein Bildschirm.").padding(.top, -22)
             VStack(alignment: .leading, spacing: 20) {
                 ForEach(features, id: \.0) { f in
                     HStack(spacing: 18) {
@@ -88,39 +88,14 @@ struct WelcomePage: View {
     }
 }
 
-// MARK: - Design preset gallery
-struct LooksPage: View {
-    @ObservedObject var s = Store.shared
-    var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Wähle ein Design", subtitle: "Ein Startpunkt – alles lässt sich später anpassen.")
-            ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(200), spacing: 18), count: 4), spacing: 18) {
-                    ForEach(presets) { p in
-                        let sel = s.look == p.look
-                        VStack(spacing: 8) {
-                            LookThumb(look: p.look, width: 200)
-                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.accentColor, lineWidth: sel ? 3 : 0))
-                                .shadow(color: .black.opacity(sel ? 0.3 : 0.12), radius: sel ? 10 : 5, y: 3)
-                            Text(p.name).font(.headline).foregroundStyle(sel ? Color.accentColor : .primary)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture { withAnimation(.spring(duration: 0.35)) { s.look = p.look } }
-                    }
-                }
-                .padding(.bottom, 20)
-            }
-        }
-    }
-}
-
 // MARK: - Background picker with tuning sliders
 struct BackgroundPage: View {
     @ObservedObject var s = Store.shared
+    var header = true
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Hintergrund", subtitle: "Alle Szenen bewegen sich sanft und endlos.")
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(160), spacing: 16), count: 4), spacing: 14) {
+            if header { PageHeader(title: "Hintergrund", subtitle: "Alle Szenen bewegen sich sanft und endlos.") }
+            ScrollView { LazyVGrid(columns: Array(repeating: GridItem(.fixed(160), spacing: 16), count: 4), spacing: 14) {
                 ForEach(BG.allCases) { bg in
                     let sel = s.look.bg == bg
                     VStack(spacing: 6) {
@@ -133,7 +108,7 @@ struct BackgroundPage: View {
                     .contentShape(Rectangle())
                     .onTapGesture { withAnimation(.smooth) { s.look.bg = bg } }
                 }
-            }
+            }.padding(.vertical, 8) }
             HStack(spacing: 28) {
                 slider("Tempo", "tortoise", $s.look.speed, 0.2...3)
                 slider("Farbton", "paintpalette", $s.look.hue, 0...1)
@@ -221,7 +196,7 @@ struct DonePage: View {
             PageHeader(title: "Alles bereit.", subtitle: "Lumen wartet ab jetzt in der Menüleiste (✦).")
             HStack(spacing: 12) {
                 Button { SaverController.shared.show() } label: { Label("Vorschau", systemImage: "play.fill") }
-                Button { edit() } label: { Label("Widgets anpassen", systemImage: "slider.horizontal.3") }
+                Button { edit() } label: { Label("Stil anpassen", systemImage: "textformat") }
             }
             .controlSize(.large)
             Spacer()
