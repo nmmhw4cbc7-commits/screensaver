@@ -63,3 +63,121 @@ final class Weather {
         }
     }
 }
+
+// MARK: - Clock view dispatching all sixteen faces
+struct ClockView: View {
+    let look: Look
+    let date: Date
+    private var c: Color { palette[min(max(look.color, 0), palette.count - 1)] }
+    private func f(_ s: CGFloat) -> Font { look.font.font(s) }
+    private func digits(_ t: TimeParts) -> String { t.hh + ":" + t.mm + (look.seconds ? ":" + t.ss : "") }
+
+    var body: some View {
+        VStack(spacing: 40) {
+            face(TimeParts(date, look.h24))
+            info
+        }
+        .foregroundStyle(c)
+        .scaleEffect(look.size)
+        .animation(.smooth(duration: 0.5), value: date)
+    }
+
+    @ViewBuilder private var info: some View {
+        if look.showDate || look.showWeather {
+            HStack(spacing: 30) {
+                if look.showDate { Text(date.formatted(.dateTime.weekday(.wide).day().month(.wide))) }
+                if look.showWeather, let w = Weather.shared.get(look.city) {
+                    let d = Weather.describe(w.code)
+                    Label("\(Int(w.temp.rounded()))° · \(d.1)", systemImage: d.0)
+                }
+            }
+            .font(f(40))
+            .opacity(0.8)
+        }
+    }
+
+    @ViewBuilder private func face(_ t: TimeParts) -> some View {
+        switch look.face {
+        case .classic:
+            Text(digits(t)).font(f(240)).monospacedDigit().contentTransition(.numericText())
+        case .stacked:
+            VStack(spacing: -80) { Text(t.hh); Text(t.mm).opacity(0.55) }
+                .font(f(310)).monospacedDigit().contentTransition(.numericText())
+        case .flip:
+            HStack(spacing: 18) {
+                FlipCard(text: t.hh, font: f(200))
+                FlipCard(text: t.mm, font: f(200))
+                if look.seconds { FlipCard(text: t.ss, font: f(200)).opacity(0.7) }
+            }
+        case .words:
+            Text("Es ist\n" + Self.words(t.h, t.m)).font(f(104))
+                .multilineTextAlignment(.leading).frame(width: 1150, alignment: .leading)
+        case .analog:
+            Analog(date: date, bold: false, seconds: look.seconds)
+        case .chunky:
+            Analog(date: date, bold: true, seconds: look.seconds)
+        case .matrix:
+            DotDigits(text: digits(t), color: c).shadow(color: c.opacity(0.5), radius: 14)
+        case .segment:
+            SegDigits(text: digits(t), color: c).shadow(color: c.opacity(0.5), radius: 14)
+        case .binary:
+            BinaryClock(t: t, seconds: look.seconds, color: c)
+        case .rings:
+            Rings(t: t, seconds: look.seconds, color: c, font: f(112))
+        case .progress:
+            let p = Double(t.h * 3600 + t.m * 60 + t.s) / 86400
+            VStack(spacing: 30) {
+                Text(t.hh + ":" + t.mm).font(f(210)).monospacedDigit().contentTransition(.numericText())
+                ZStack(alignment: .leading) {
+                    Capsule().fill(c.opacity(0.15))
+                    Capsule().fill(c).frame(width: 900 * p)
+                }
+                .frame(width: 900, height: 14)
+                Text("\(Int(p * 100)) % des Tages").font(f(34)).opacity(0.7)
+            }
+        case .split:
+            HStack(alignment: .center, spacing: 34) {
+                Text(t.hh).font(f(360))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(t.mm).font(f(180))
+                    Text(date.formatted(.dateTime.weekday(.wide))).font(f(46)).opacity(0.65)
+                }
+            }
+            .monospacedDigit().contentTransition(.numericText())
+        case .editorial:
+            VStack(spacing: 20) {
+                Text(date.formatted(.dateTime.weekday(.wide)).uppercased()).font(f(28)).tracking(14).opacity(0.75)
+                Text(t.hh + ":" + t.mm).font(f(250)).italic().monospacedDigit().contentTransition(.numericText())
+                Rectangle().fill(c.opacity(0.6)).frame(width: 420, height: 2)
+                Text(date.formatted(.dateTime.day().month(.wide).year())).font(f(32)).opacity(0.75)
+            }
+        case .pills:
+            HStack(spacing: 14) {
+                ForEach(Array(digits(t).enumerated()), id: \.offset) { _, ch in
+                    if ch == ":" {
+                        VStack(spacing: 40) { Circle().frame(width: 18, height: 18); Circle().frame(width: 18, height: 18) }.opacity(0.6)
+                    } else {
+                        Text(String(ch)).font(f(150)).monospacedDigit().contentTransition(.numericText())
+                            .frame(width: 150, height: 240)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .environment(\.colorScheme, .dark)
+                    }
+                }
+            }
+        case .orbit:
+            Orbit(date: date, t: t, color: c, font: f)
+        case .nixie:
+            let glow = look.color == 0 ? Color(red: 1, green: 0.55, blue: 0.2) : c
+            HStack(spacing: 14) {
+                ForEach(Array(digits(t).enumerated()), id: \.offset) { _, ch in
+                    if ch == ":" {
+                        VStack(spacing: 50) { Circle().frame(width: 14, height: 14); Circle().frame(width: 14, height: 14) }
+                            .foregroundStyle(glow).shadow(color: glow, radius: 10)
+                    } else {
+                        NixieTube(ch: ch, color: glow)
+                    }
+                }
+            }
+        }
+    }
+}
