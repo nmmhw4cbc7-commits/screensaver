@@ -380,3 +380,21 @@ struct Orbit: View {
         .frame(width: 780, height: 780)
     }
 }
+
+// MARK: - Nixie tubes
+struct NixieTube: View {
+    let ch: Character
+    let color: Color
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 70, style: .continuous)
+                .fill(LinearGradient(colors: [.white.opacity(0.09), .white.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                .overlay(RoundedRectangle(cornerRadius: 70, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 2))
+            Text("8").font(.system(size: 170, weight: .light, design: .serif)).foregroundStyle(color.opacity(0.06))
+            Text(String(ch)).font(.system(size: 170, weight: .light, design: .serif)).foregroundStyle(color)
+                .shadow(color: color, radius: 6).shadow(color: color.opacity(0.7), radius: 26)
+                .contentTransition(.numericText())
+        }
+        .frame(width: 150, height: 250)
+    }
+}
