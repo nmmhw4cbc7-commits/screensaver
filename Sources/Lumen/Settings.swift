@@ -66,3 +66,36 @@ struct FacesPage: View {
         }
     }
 }
+
+// MARK: - Style page: font, color, display options
+struct StylePage: View {
+    @ObservedObject var s = Store.shared
+    var body: some View {
+        Form {
+            Section("Schrift") {
+                Picker("Schrift", selection: $s.look.font) { ForEach(FontChoice.allCases) { Text($0.name).tag($0) } }
+                    .pickerStyle(.segmented).labelsHidden()
+            }
+            Section("Farbe") {
+                HStack(spacing: 12) {
+                    ForEach(palette.indices, id: \.self) { i in
+                        Circle().fill(palette[i]).frame(width: 28, height: 28)
+                            .overlay(Circle().strokeBorder(.primary.opacity(0.2)))
+                            .overlay(Circle().strokeBorder(Color.accentColor, lineWidth: s.look.color == i ? 2.5 : 0).padding(-4))
+                            .onTapGesture { s.look.color = i }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            Section("Anzeige") {
+                Toggle("Sekunden anzeigen", isOn: $s.look.seconds)
+                Toggle("24-Stunden-Format", isOn: $s.look.h24)
+                Toggle("Datum anzeigen", isOn: $s.look.showDate)
+                Toggle("Wetter anzeigen", isOn: $s.look.showWeather)
+                if s.look.showWeather { TextField("Stadt", text: $s.look.city) }
+                LabeledContent("Größe") { Slider(value: $s.look.size, in: 0.5...1.4) }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
