@@ -317,3 +317,66 @@ struct SegDigits: View {
         .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.08, d: 1, tx: h * 0.04, ty: 0))
     }
 }
+
+// MARK: - Binary, rings and orbit faces
+struct BinaryClock: View {
+    let t: TimeParts
+    let seconds: Bool
+    let color: Color
+    var body: some View {
+        let vals = [t.h / 10, t.h % 10, t.m / 10, t.m % 10] + (seconds ? [t.s / 10, t.s % 10] : [])
+        HStack(alignment: .bottom, spacing: 28) {
+            ForEach(vals.indices, id: \.self) { i in
+                VStack(spacing: 18) {
+                    ForEach((0..<4).reversed(), id: \.self) { b in
+                        Circle().fill(color.opacity((vals[i] >> b) & 1 == 1 ? 1 : 0.1)).frame(width: 64, height: 64)
+                    }
+                }
+                .padding(.leading, i % 2 == 0 && i > 0 ? 34 : 0)
+            }
+        }
+    }
+}
+
+struct Rings: View {
+    let t: TimeParts
+    let seconds: Bool
+    let color: Color
+    let font: Font
+    var body: some View {
+        ZStack {
+            ring(Double(t.h % 12) / 12 + Double(t.m) / 720, 580)
+            ring(Double(t.m) / 60, 490).opacity(0.8)
+            if seconds { ring(Double(t.s) / 60, 400).opacity(0.6) }
+            Text(t.hh + ":" + t.mm).font(font).monospacedDigit().contentTransition(.numericText())
+        }
+    }
+
+    private func ring(_ v: Double, _ d: CGFloat) -> some View {
+        ZStack {
+            Circle().stroke(color.opacity(0.12), lineWidth: 30)
+            Circle().trim(from: 0, to: max(0.001, v)).stroke(color, style: StrokeStyle(lineWidth: 30, lineCap: .round)).rotationEffect(.degrees(-90))
+        }
+        .frame(width: d, height: d)
+    }
+}
+
+struct Orbit: View {
+    let date: Date
+    let t: TimeParts
+    let color: Color
+    let font: (CGFloat) -> Font
+    var body: some View {
+        let a = Angle.degrees(localEpoch(date) / 10)
+        ZStack {
+            Circle().stroke(color.opacity(0.18), lineWidth: 2).frame(width: 600, height: 600)
+            Text(t.hh).font(font(260)).monospacedDigit().contentTransition(.numericText())
+            ZStack {
+                Circle().fill(color).frame(width: 30, height: 30).offset(y: -300)
+                Text(t.mm).font(font(40)).monospacedDigit().rotationEffect(-a).offset(y: -360)
+            }
+            .rotationEffect(a)
+        }
+        .frame(width: 780, height: 780)
+    }
+}
