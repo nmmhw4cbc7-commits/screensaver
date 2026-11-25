@@ -209,3 +209,37 @@ struct FlipCard: View {
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.08)))
     }
 }
+
+// MARK: - Analog faces
+struct Analog: View {
+    let date: Date
+    let bold: Bool
+    let seconds: Bool
+    var body: some View {
+        let e = localEpoch(date)
+        let r: CGFloat = 290
+        ZStack {
+            if bold { Circle().opacity(0.08) }
+            ForEach(0..<(bold ? 12 : 60), id: \.self) { i in tick(i, r) }
+            hand(e / 120, r * 0.5, bold ? 24 : 7)
+            hand(e / 10, r * 0.78, bold ? 16 : 5)
+            if seconds { hand(e * 6, r * 0.86, 2).foregroundStyle(.orange) }
+            Circle().frame(width: bold ? 38 : 16, height: bold ? 38 : 16)
+        }
+        .frame(width: r * 2, height: r * 2)
+    }
+
+    private func tick(_ i: Int, _ r: CGFloat) -> some View {
+        let major = bold || i % 5 == 0
+        return Group {
+            if bold { Circle().frame(width: 18, height: 18) } else { Capsule().frame(width: major ? 4 : 2, height: major ? 28 : 12) }
+        }
+        .opacity(major ? 0.9 : 0.35)
+        .offset(y: -(r - (bold ? 36 : 22)))
+        .rotationEffect(.degrees(Double(i) * (bold ? 30 : 6)))
+    }
+
+    private func hand(_ deg: Double, _ len: CGFloat, _ w: CGFloat) -> some View {
+        Capsule().frame(width: w, height: len).offset(y: -len / 2 + w / 2).rotationEffect(.degrees(deg))
+    }
+}
