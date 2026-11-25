@@ -180,4 +180,17 @@ struct ClockView: View {
             }
         }
     }
+
+    // MARK: - German word clock
+    static func words(_ h: Int, _ m: Int) -> String {
+        let n = ["zwölf", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf"]
+        var five = Int((Double(m) / 5).rounded())
+        var hr = h
+        if five == 12 { five = 0; hr += 1 }
+        let cur = n[hr % 12], nxt = n[(hr + 1) % 12]
+        if five == 0 { return (cur == "eins" ? "ein" : cur) + " Uhr" }
+        let phrases = ["", "fünf nach C", "zehn nach C", "viertel nach C", "zwanzig nach C", "fünf vor halb N", "halb N",
+                       "fünf nach halb N", "zwanzig vor N", "viertel vor N", "zehn vor N", "fünf vor N"]
+        return phrases[five].replacingOccurrences(of: "C", with: cur).replacingOccurrences(of: "N", with: nxt)
+    }
 }
