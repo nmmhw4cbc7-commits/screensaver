@@ -39,3 +39,30 @@ struct SettingsView: View {
         .frame(minWidth: 1100, minHeight: 820)
     }
 }
+
+// MARK: - Clock face gallery
+struct FacesPage: View {
+    @ObservedObject var s = Store.shared
+    var header = true
+    var body: some View {
+        VStack(spacing: 0) {
+            if header { PageHeader(title: "Wähle deine Uhr", subtitle: "16 Zifferblätter – kombinierbar mit jedem Hintergrund.") }
+            ScrollView {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(180), spacing: 16), count: 4), spacing: 16) {
+                    ForEach(Face.allCases) { f in
+                        let sel = s.look.face == f
+                        VStack(spacing: 6) {
+                            FaceThumb(look: s.look, face: f, width: 180)
+                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.accentColor, lineWidth: sel ? 3 : 0))
+                                .shadow(color: .black.opacity(sel ? 0.3 : 0.1), radius: sel ? 10 : 4, y: 3)
+                            Text(f.name).font(.callout.weight(.medium)).foregroundStyle(sel ? Color.accentColor : .primary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { withAnimation(.smooth) { s.look.face = f } }
+                    }
+                }
+                .padding(.vertical, 12)
+            }
+        }
+    }
+}
