@@ -194,3 +194,18 @@ struct ClockView: View {
         return phrases[five].replacingOccurrences(of: "C", with: cur).replacingOccurrences(of: "N", with: nxt)
     }
 }
+
+// MARK: - Flip cards
+struct FlipCard: View {
+    let text: String
+    let font: Font
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.black.opacity(0.55))
+            Text(text).font(font).monospacedDigit().contentTransition(.numericText()).fixedSize()
+            Rectangle().fill(.black.opacity(0.6)).frame(height: 5)
+        }
+        .frame(width: 300, height: 280)
+        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.08)))
+    }
+}
