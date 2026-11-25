@@ -22,3 +22,37 @@ struct SaverCanvas: View {
         }
     }
 }
+
+// MARK: - Live thumbnails
+struct LookThumb: View {
+    let look: Look
+    var width: CGFloat = 240
+    var fps: Double = 15
+    var body: some View {
+        SaverCanvas(look: look, fps: fps)
+            .frame(width: width, height: width * 10 / 16)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .allowsHitTesting(false)
+    }
+}
+
+struct FaceThumb: View {
+    let look: Look
+    let face: Face
+    var width: CGFloat = 180
+    var body: some View {
+        var l = look
+        l.face = face
+        l.showDate = false
+        l.showWeather = false
+        l.size = 1
+        return TimelineView(.periodic(from: .now, by: 1)) { tl in
+            ClockView(look: l, date: tl.date)
+                .frame(width: 1440, height: 900)
+                .scaleEffect(width / 1440 * 1.45)
+                .frame(width: width, height: width * 10 / 16)
+        }
+        .background(Color(white: 0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
