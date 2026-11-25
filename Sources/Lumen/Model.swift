@@ -10,3 +10,13 @@ enum BG: String, CaseIterable, Identifiable, Codable {
          "Ozean", "Regen", "Lichter", "Glühwürmchen", "Dämmerung", "Eigene Fotos"][BG.allCases.firstIndex(of: self)!]
     }
 }
+
+// MARK: - Clock face catalogue
+enum Face: String, CaseIterable, Identifiable, Codable {
+    case classic, stacked, flip, words, analog, chunky, matrix, segment, binary, rings, progress, split, editorial, pills, orbit, nixie
+    var id: String { rawValue }
+    var name: String {
+        ["Klassisch", "Gestapelt", "Klappzahlen", "Worte", "Analog", "Analog Kräftig", "Punktmatrix", "Segment",
+         "Binär", "Ringe", "Tagesbalken", "Geteilt", "Editorial", "Kapseln", "Orbit", "Röhre"][Face.allCases.firstIndex(of: self)!]
+    }
+}
