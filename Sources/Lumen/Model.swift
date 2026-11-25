@@ -43,3 +43,20 @@ let palette: [Color] = [
     Color(red: 0.78, green: 0.7, blue: 1), Color(red: 1, green: 0.6, blue: 0.76), Color(red: 1, green: 0.8, blue: 0.3),
     Color(red: 1, green: 0.5, blue: 0.35), Color(red: 0.75, green: 1, blue: 0.35), Color(white: 0.08),
 ]
+
+// MARK: - Look: face + background + style
+struct Look: Codable, Equatable {
+    var bg: BG = .aurora
+    var face: Face = .classic
+    var font: FontChoice = .thin
+    var color = 0
+    var seconds = false
+    var h24 = true
+    var showDate = true
+    var showWeather = false
+    var city = "Berlin"
+    var size = 1.0
+    var speed = 1.0
+    var hue = 0.0
+    var dim = 0.0
+}
