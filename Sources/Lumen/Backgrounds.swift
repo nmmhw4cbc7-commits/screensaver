@@ -26,6 +26,10 @@ struct BackgroundView: View {
         case .aurora: Blobs(t: t, lava: false)
         case .lava: Blobs(t: t, lava: true)
         case .mesh: Mesh(t: t)
+        case .pastel: Mesh(t: t, pastel: true)
+        case .midnight: Midnight(t: t)
+        case .sonar: Sonar(t: t)
+        case .synth: Synth(t: t)
         case .spectrum: Spectrum(t: t)
         case .stars: Stars(t: t)
         case .constellation: Constellation(t: t)
@@ -77,6 +81,7 @@ private struct Blobs: View {
 // MARK: - Mesh gradient and spectrum backgrounds
 private struct Mesh: View {
     let t: Double
+    var pastel = false
     var body: some View {
         let p = { (a: Double, b: Double) -> SIMD2<Float> in [Float(a), Float(b)] }
         MeshGradient(width: 3, height: 3, points: [
@@ -86,7 +91,7 @@ private struct Mesh: View {
         ], colors: (0..<9).map { i in
             let f = Double(i)
             let h = fract(0.55 + f * 0.045 + t * 0.008 + 0.05 * sin(t * 0.1 + f))
-            return Color(hue: h, saturation: 0.75, brightness: 0.45 + 0.35 * hash(f))
+            return Color(hue: pastel ? fract(h + 0.4) : h, saturation: pastel ? 0.35 : 0.75, brightness: pastel ? 0.8 + 0.15 * hash(f) : 0.45 + 0.35 * hash(f))
         })
     }
 }
@@ -324,6 +329,75 @@ private struct Photos: View {
             .frame(width: g.size.width, height: g.size.height)
             .clipped()
             .animation(.easeInOut(duration: 1.6), value: i)
+        }
+    }
+}
+
+// MARK: - Midnight, sonar and synthwave scenes
+private struct Midnight: View {
+    let t: Double
+    var body: some View {
+        GeometryReader { g in
+            let s = g.size
+            ZStack {
+                Color(red: 0.01, green: 0.01, blue: 0.03)
+                RadialGradient(colors: [Color(red: 0.12, green: 0.14, blue: 0.35).opacity(0.9), .clear], center: .center, startRadius: 0, endRadius: max(s.width, s.height) * 0.6)
+                    .frame(width: s.width * 2, height: s.height * 2)
+                    .offset(x: s.width * 0.25 * sin(t * 0.03), y: s.height * 0.2 * cos(t * 0.025))
+            }
+            .frame(width: s.width, height: s.height)
+            .clipped()
+        }
+    }
+}
+
+private struct Sonar: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            c.fill(Path(CGRect(origin: .zero, size: s)), with: .color(Color(red: 0.0, green: 0.04, blue: 0.05)))
+            let center = CGPoint(x: s.width / 2, y: s.height / 2)
+            let maxR = hypot(s.width, s.height) / 2
+            for i in 0..<7 {
+                let k = fract(Double(i) / 7 + t * 0.05)
+                let r = k * maxR
+                c.stroke(Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)),
+                         with: .color(Color(red: 0.2, green: 1, blue: 0.85).opacity((1 - k) * 0.5)), lineWidth: 2 + 10 * (1 - k))
+            }
+        }
+    }
+}
+
+private struct Synth: View {
+    let t: Double
+    var body: some View {
+        Canvas { c, s in
+            let hz = s.height * 0.58
+            c.fill(Path(CGRect(x: 0, y: 0, width: s.width, height: hz)), with: .linearGradient(
+                Gradient(colors: [Color(red: 0.05, green: 0.0, blue: 0.15), Color(red: 0.55, green: 0.1, blue: 0.45), Color(red: 1, green: 0.45, blue: 0.4)]),
+                startPoint: .zero, endPoint: CGPoint(x: 0, y: hz)))
+            let r = s.height * 0.2
+            var sun = Path(ellipseIn: CGRect(x: s.width / 2 - r, y: hz - r * 1.4, width: r * 2, height: r * 2))
+            sun = sun.intersection(Path(CGRect(x: 0, y: 0, width: s.width, height: hz)))
+            c.fill(sun, with: .linearGradient(Gradient(colors: [Color(red: 1, green: 0.85, blue: 0.3), Color(red: 1, green: 0.3, blue: 0.55)]),
+                                              startPoint: CGPoint(x: 0, y: hz - r * 1.4), endPoint: CGPoint(x: 0, y: hz)))
+            for i in 0..<5 {
+                let y = hz - r * 0.15 - Double(i) * r * 0.16
+                c.fill(Path(CGRect(x: 0, y: y, width: s.width, height: r * 0.025 * Double(5 - i))).intersection(sun), with: .color(Color(red: 0.55, green: 0.1, blue: 0.45)))
+            }
+            c.fill(Path(CGRect(x: 0, y: hz, width: s.width, height: s.height - hz)), with: .color(Color(red: 0.04, green: 0.0, blue: 0.1)))
+            let grid = Color(red: 1, green: 0.3, blue: 0.8)
+            for i in 0..<16 {
+                let z = fract(Double(i) / 16 + t * 0.12)
+                let y = hz + (s.height - hz) * z * z
+                var p = Path(); p.move(to: CGPoint(x: 0, y: y)); p.addLine(to: CGPoint(x: s.width, y: y))
+                c.stroke(p, with: .color(grid.opacity(0.25 + 0.6 * z)), lineWidth: 1 + 2 * z)
+            }
+            for i in -14...14 {
+                var p = Path(); p.move(to: CGPoint(x: s.width / 2, y: hz))
+                p.addLine(to: CGPoint(x: s.width / 2 + Double(i) * s.width * 0.12, y: s.height))
+                c.stroke(p, with: .color(grid.opacity(0.6)), lineWidth: 1.5)
+            }
         }
     }
 }
