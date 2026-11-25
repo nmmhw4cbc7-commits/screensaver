@@ -60,3 +60,25 @@ struct Look: Codable, Equatable {
     var hue = 0.0
     var dim = 0.0
 }
+
+// MARK: - Persistent settings store
+final class Store: ObservableObject {
+    static let shared = Store()
+    private let d = UserDefaults.standard
+
+    @Published var look: Look { didSet { d.set(try? JSONEncoder().encode(look), forKey: "look3") } }
+    @Published var idleMinutes: Int { didSet { d.set(idleMinutes, forKey: "idle") } }
+    @Published var displaySleep: Int { didSet { d.set(displaySleep, forKey: "displaySleep") } }
+    @Published var skipVideo: Bool { didSet { d.set(skipVideo, forKey: "skipVideo") } }
+    @Published var photoFolder: String { didSet { d.set(photoFolder, forKey: "photos") } }
+    @Published var onboarded: Bool { didSet { d.set(onboarded, forKey: "onboarded3") } }
+
+    init() {
+        look = d.data(forKey: "look3").flatMap { try? JSONDecoder().decode(Look.self, from: $0) } ?? Look()
+        idleMinutes = d.object(forKey: "idle") as? Int ?? 5
+        displaySleep = d.object(forKey: "displaySleep") as? Int ?? 0
+        skipVideo = d.object(forKey: "skipVideo") as? Bool ?? true
+        photoFolder = d.string(forKey: "photos") ?? ""
+        onboarded = d.bool(forKey: "onboarded3")
+    }
+}
