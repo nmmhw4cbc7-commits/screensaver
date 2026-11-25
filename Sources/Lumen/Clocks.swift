@@ -243,3 +243,36 @@ struct Analog: View {
         Capsule().frame(width: w, height: len).offset(y: -len / 2 + w / 2).rotationEffect(.degrees(deg))
     }
 }
+
+// MARK: - Dot-matrix digits
+struct DotDigits: View {
+    let text: String
+    let color: Color
+    var dot: CGFloat = 24
+    static let glyphs: [Character: [Int]] = [
+        "0": [14, 17, 19, 21, 25, 17, 14], "1": [4, 12, 4, 4, 4, 4, 14], "2": [14, 17, 1, 2, 4, 8, 31],
+        "3": [31, 2, 4, 2, 1, 17, 14], "4": [2, 6, 10, 18, 31, 2, 2], "5": [31, 16, 30, 1, 1, 17, 14],
+        "6": [6, 8, 16, 30, 17, 17, 14], "7": [31, 1, 2, 4, 8, 8, 8], "8": [14, 17, 17, 14, 17, 17, 14],
+        "9": [14, 17, 17, 15, 1, 2, 12],
+    ]
+    var body: some View {
+        let step = dot * 1.35
+        let cols = text.reduce(0) { $0 + ($1 == ":" ? 1 : 5) + 1 } - 1
+        Canvas { ctx, _ in
+            var x: CGFloat = 0
+            for ch in text {
+                let w = ch == ":" ? 1 : 5
+                let rows = Self.glyphs[ch] ?? [0, 0, 1, 0, 1, 0, 0]
+                for r in 0..<7 {
+                    for col in 0..<w {
+                        let on = ch == ":" ? rows[r] == 1 : (rows[r] >> (4 - col)) & 1 == 1
+                        let rect = CGRect(x: x + CGFloat(col) * step, y: CGFloat(r) * step, width: dot, height: dot)
+                        ctx.fill(Path(ellipseIn: rect), with: .color(color.opacity(on ? 1 : 0.08)))
+                    }
+                }
+                x += CGFloat(w + 1) * step
+            }
+        }
+        .frame(width: CGFloat(cols) * step - (step - dot), height: 7 * step - (step - dot))
+    }
+}
